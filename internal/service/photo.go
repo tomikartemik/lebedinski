@@ -54,7 +54,8 @@ func (s *PhotoService) SavePhoto(itemIDStr string, file *multipart.FileHeader) e
 		Link:   filePath,
 		ItemID: itemID,
 	}
-	if err := s.repo.NewPhoto(photo).Error; err != nil {
+
+	if err := s.repo.NewPhoto(photo); err != nil {
 		return fmt.Errorf("unable to save photo to database: %v", err)
 	}
 
