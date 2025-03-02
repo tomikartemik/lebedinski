@@ -5,10 +5,12 @@ import (
 	"io"
 	"lebedinski/internal/model"
 	"lebedinski/internal/repository"
+	"math/rand"
 	"mime/multipart"
 	"os"
 	"path/filepath"
 	"strconv"
+	"time"
 )
 
 type PhotoService struct {
@@ -33,7 +35,9 @@ func (s *PhotoService) SavePhoto(itemIDStr string, file *multipart.FileHeader) e
 	defer src.Close()
 
 	ext := filepath.Ext(file.Filename)
-	newFileName := fmt.Sprintf("photo_%d%s", itemID, ext)
+	timestamp := time.Now().Unix()  // Время в секундах
+	randomSuffix := rand.Intn(1000) // Случайное число от 0 до 999
+	newFileName := fmt.Sprintf("photo_%d_%d_%03d%s", itemID, timestamp, randomSuffix, ext)
 	filePath := filepath.Join("uploads", newFileName)
 
 	if err := os.MkdirAll("uploads", os.ModePerm); err != nil {
