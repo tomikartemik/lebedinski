@@ -54,7 +54,7 @@ func (h *Handler) InitRoutes() *gin.Engine {
 
 	size := router.Group("size")
 	{
-		size.POST("/add")
+		size.POST("/add", h.AddNewSizes)
 	}
 
 	return router
