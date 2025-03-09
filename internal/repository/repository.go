@@ -9,13 +9,15 @@ type Repository struct {
 	Item
 	Photo
 	Size
+	Category
 }
 
 func NewRepository(db *gorm.DB) *Repository {
 	return &Repository{
-		Item:  NewItemRepository(db),
-		Photo: NewPhotoRepository(db),
-		Size:  NewSizeRepository(db),
+		Item:     NewItemRepository(db),
+		Photo:    NewPhotoRepository(db),
+		Size:     NewSizeRepository(db),
+		Category: NewCategoryRepository(db),
 	}
 }
 
@@ -32,4 +34,9 @@ type Photo interface {
 
 type Size interface {
 	AddNewSizes(sizes []model.Size) error
+}
+
+type Category interface {
+	AddCategory(category model.Category) error
+	GetAllCategories() ([]model.Category, error)
 }

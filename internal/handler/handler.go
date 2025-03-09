@@ -57,5 +57,10 @@ func (h *Handler) InitRoutes() *gin.Engine {
 		size.POST("/add", h.AddNewSizes)
 	}
 
+	category := router.Group("category")
+	{
+		category.GET("/all", h.GetAllCategorise)
+		category.POST("/new", h.AddNewCategory)
+	}
 	return router
 }

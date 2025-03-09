@@ -10,13 +10,15 @@ type Service struct {
 	Item
 	Photo
 	Size
+	Category
 }
 
 func NewService(repos *repository.Repository) *Service {
 	return &Service{
-		Item:  NewItemService(repos),
-		Photo: NewPhotoService(repos),
-		Size:  NewSizeService(repos),
+		Item:     NewItemService(repos),
+		Photo:    NewPhotoService(repos),
+		Size:     NewSizeService(repos),
+		Category: NewCategoryService(repos),
 	}
 }
 
@@ -33,4 +35,9 @@ type Photo interface {
 
 type Size interface {
 	AddNewSizes(sizes []model.Size) error
+}
+
+type Category interface {
+	AddCategory(category model.Category) error
+	GetAllCategories() ([]model.Category, error)
 }
