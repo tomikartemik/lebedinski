@@ -31,7 +31,7 @@ func (r *ItemRepository) GetAllItems() ([]model.Item, error) {
 
 func (r *ItemRepository) GetItemByID(id int) (model.Item, error) {
 	var item model.Item
-	if err := r.db.Where("id = ?", id).Preload("Photos").Find(&item).Error; err != nil {
+	if err := r.db.Where("id = ?", id).Preload("Photos").Preload("Sizes").Find(&item).Error; err != nil {
 		return item, err
 	}
 	return item, nil
