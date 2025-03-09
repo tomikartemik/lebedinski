@@ -10,6 +10,7 @@ type Item struct {
 	Stock           int     `gorm:"not null;default:0" json:"stock"`
 	CustomTailoring bool    `json:"custom_tailoring"`
 	SoldOut         bool    `json:"sold_out"`
+	Sizes           []Size  `gorm:"foreignKey:ItemID" json:"sizes"`
 	Photos          []Photo `gorm:"foreignKey:ItemID" json:"photos"`
 }
 

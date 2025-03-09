@@ -24,6 +24,7 @@ func ConnectDB() (*gorm.DB, error) {
 	err = db.AutoMigrate(
 		model.Item{},
 		model.Photo{},
+		model.Size{},
 	)
 
 	if err != nil {
