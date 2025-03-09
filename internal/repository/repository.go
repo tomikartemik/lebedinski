@@ -18,7 +18,7 @@ func NewRepository(db *gorm.DB) *Repository {
 }
 
 type Item interface {
-	CreateItem(item model.Item) error
+	CreateItem(item model.Item) (int, error)
 	GetAllItems() ([]model.Item, error)
 	GetItemByID(id int) (model.Item, error)
 	UpdateItem(item model.Item) error

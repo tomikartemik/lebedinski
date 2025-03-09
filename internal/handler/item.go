@@ -15,11 +15,12 @@ func (h *Handler) CreateItem(c *gin.Context) {
 		return
 	}
 
-	if err := h.services.CreateItem(item); err != nil {
+	itemID, err := h.services.CreateItem(item)
+	if err != nil {
 		utils.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
 	}
 
-	c.JSON(http.StatusOK, model.SuccessResponse{Message: "Item created!"})
+	c.JSON(http.StatusOK, itemID)
 }
 
 func (h *Handler) AllItems(c *gin.Context) {

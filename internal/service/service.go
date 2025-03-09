@@ -19,7 +19,7 @@ func NewService(repos *repository.Repository) *Service {
 }
 
 type Item interface {
-	CreateItem(item model.Item) error
+	CreateItem(item model.Item) (int, error)
 	GetAllItems() ([]model.ItemShortInfo, error)
 	GetItemByID(id string) (model.Item, error)
 	UpdateItem(item model.Item) error

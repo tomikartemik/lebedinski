@@ -15,7 +15,7 @@ func NewItemService(repo repository.Item) *ItemService {
 	return &ItemService{repo: repo}
 }
 
-func (s *ItemService) CreateItem(item model.Item) error {
+func (s *ItemService) CreateItem(item model.Item) (int, error) {
 	return s.repo.CreateItem(item)
 }
 
