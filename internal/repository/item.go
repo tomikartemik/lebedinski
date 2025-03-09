@@ -23,7 +23,7 @@ func (r *ItemRepository) CreateItem(item model.Item) (int, error) {
 
 func (r *ItemRepository) GetAllItems() ([]model.Item, error) {
 	var items []model.Item
-	if err := r.db.Preload("Photos").Find(&items).Error; err != nil {
+	if err := r.db.Preload("Category").Preload("Photos").Find(&items).Error; err != nil {
 		return nil, err
 	}
 	return items, nil

@@ -25,6 +25,6 @@ type ItemShortInfo struct {
 	Discount    int      `json:"discount"`
 	SoldOut     bool     `json:"sold_out"`
 	CategoryID  int      `json:"category_id"`
-	Category    Category `gorm:"foreignKey:CategoryID" json:"category"`
-	Photos      []Photo  `gorm:"foreignKey:ItemID" json:"photos"`
+	Category    Category `json:"category"`
+	Photos      []Photo  `json:"photos"`
 }
