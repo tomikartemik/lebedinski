@@ -8,12 +8,14 @@ import (
 type Repository struct {
 	Item
 	Photo
+	Size
 }
 
 func NewRepository(db *gorm.DB) *Repository {
 	return &Repository{
 		Item:  NewItemRepository(db),
 		Photo: NewPhotoRepository(db),
+		Size:  NewSizeRepository(db),
 	}
 }
 
@@ -26,4 +28,8 @@ type Item interface {
 
 type Photo interface {
 	NewPhoto(photo model.Photo) error
+}
+
+type Size interface {
+	AddNewSizes(sizes []model.Size) error
 }

@@ -9,12 +9,14 @@ import (
 type Service struct {
 	Item
 	Photo
+	Size
 }
 
 func NewService(repos *repository.Repository) *Service {
 	return &Service{
 		Item:  NewItemService(repos),
 		Photo: NewPhotoService(repos),
+		Size:  NewSizeService(repos),
 	}
 }
 
@@ -27,4 +29,8 @@ type Item interface {
 
 type Photo interface {
 	SavePhoto(itemIDStr string, file *multipart.FileHeader) error
+}
+
+type Size interface {
+	AddNewSizes(sizes []model.Size) error
 }
