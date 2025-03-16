@@ -66,7 +66,7 @@ func (h *Handler) InitRoutes() *gin.Engine {
 	order := router.Group("order")
 	{
 		order.POST("/new", h.CreateOrder)
-		order.GET("/", h.GetOrderByID)
+		order.GET("", h.GetOrderByID)
 	}
 	return router
 }
