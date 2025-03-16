@@ -62,5 +62,11 @@ func (h *Handler) InitRoutes() *gin.Engine {
 		category.GET("/all", h.GetAllCategorise)
 		category.POST("/new", h.AddNewCategory)
 	}
+
+	order := router.Group("order")
+	{
+		order.POST("/new", h.CreateOrder)
+		order.GET("/", h.GetOrderByID)
+	}
 	return router
 }

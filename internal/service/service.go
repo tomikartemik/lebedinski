@@ -11,6 +11,7 @@ type Service struct {
 	Photo
 	Size
 	Category
+	Order
 }
 
 func NewService(repos *repository.Repository) *Service {
@@ -19,6 +20,7 @@ func NewService(repos *repository.Repository) *Service {
 		Photo:    NewPhotoService(repos),
 		Size:     NewSizeService(repos),
 		Category: NewCategoryService(repos),
+		Order:    NewOrderService(repos),
 	}
 }
 
@@ -40,4 +42,9 @@ type Size interface {
 type Category interface {
 	AddCategory(category model.Category) error
 	GetAllCategories() ([]model.Category, error)
+}
+
+type Order interface {
+	CreateOrder(order model.Order) (int, error)
+	GetOrderByID(idStr string) (model.Order, error)
 }
