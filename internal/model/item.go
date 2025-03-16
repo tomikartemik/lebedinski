@@ -8,7 +8,6 @@ type Item struct {
 	Price           int      `gorm:"not null" json:"price"`
 	ActualPrice     int      `gorm:"not null" json:"actual_price"`
 	Discount        int      `gorm:"not null;default:0" json:"discount"`
-	Stock           int      `gorm:"not null;default:0" json:"stock"`
 	CustomTailoring bool     `json:"custom_tailoring"`
 	SoldOut         bool     `json:"sold_out"`
 	CategoryID      int      `gorm:"not null" json:"category_id"`
