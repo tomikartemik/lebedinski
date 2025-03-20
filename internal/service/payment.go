@@ -33,7 +33,7 @@ func (s *PaymentService) CreatePayment(amount float64, description string) (*mod
 		Capture:     true,
 		Confirmation: model.Confirmation{
 			Type:      "redirect",
-			ReturnURL: "https://your-site.com/payment-callback",
+			ReturnURL: "https://xouston.com",
 		},
 		PaymentMethod: model.PaymentMethod{
 			Type: "bank_card",

@@ -25,7 +25,7 @@ func (h *Handler) CreatePayment(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, gin.H{
 		"payment_id":  paymentResponse.ID,
-		"payment_url": paymentResponse.ConfirmationURL,
+		"payment_url": paymentResponse.Confirmation.ConfirmationURL,
 	})
 
 }
@@ -39,7 +39,7 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 		} `json:"object"`
 	}
 	if err := c.ShouldBindJSON(&notification); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid notification"})
+		fmt.Println("invalid notification")
 		return
 	}
 
