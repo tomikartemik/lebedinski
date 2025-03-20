@@ -68,5 +68,10 @@ func (h *Handler) InitRoutes() *gin.Engine {
 		order.POST("/new", h.CreateOrder)
 		order.GET("", h.GetOrderByID)
 	}
+	payment := router.Group("payment")
+	{
+		payment.POST("/new", h.CreatePayment)
+		payment.POST("/response", h.CreatePayment)
+	}
 	return router
 }

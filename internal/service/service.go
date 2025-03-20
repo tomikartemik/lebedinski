@@ -12,6 +12,7 @@ type Service struct {
 	Size
 	Category
 	Order
+	Payment
 }
 
 func NewService(repos *repository.Repository) *Service {
@@ -21,6 +22,7 @@ func NewService(repos *repository.Repository) *Service {
 		Size:     NewSizeService(repos),
 		Category: NewCategoryService(repos),
 		Order:    NewOrderService(repos),
+		Payment:  NewPaymentService(repos),
 	}
 }
 
@@ -47,4 +49,8 @@ type Category interface {
 type Order interface {
 	CreateOrder(order model.Order) (int, error)
 	GetOrderByID(idStr string) (model.Order, error)
+}
+
+type Payment interface {
+	CreatePayment(amount float64, currency, description string) (*model.PaymentResponse, error)
 }
