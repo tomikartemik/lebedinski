@@ -4,7 +4,9 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"github.com/gin-gonic/gin"
+	"log"
 	"net/http"
 	"os"
 )
@@ -61,12 +63,15 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 		return
 	}
 
+	fmt.Println(notification.Object.Status)
+	log.Println(notification.Object.Status)
+
 	// Обработка события
 	switch notification.Event {
 	case "payment.succeeded":
-		// Платеж успешен, обновите статус в БД
+		fmt.Println(notification.Object.Status)
 	case "payment.canceled":
-		// Платеж отменен
+		fmt.Println(notification.Object.Status)
 	}
 
 	c.Status(http.StatusOK) // Важно вернуть 200 OK!
