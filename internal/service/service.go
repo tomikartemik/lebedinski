@@ -52,5 +52,5 @@ type Order interface {
 }
 
 type Payment interface {
-	CreatePayment(amount float64, currency, description string) (*model.PaymentResponse, error)
+	CreatePayment(amount float64, description string) (*model.PaymentResponse, error)
 }

@@ -8,24 +8,26 @@ import (
 
 func (h *Handler) CreatePayment(c *gin.Context) {
 	var request struct {
-		Amount      float64 `json:"amount"`
-		Currency    string  `json:"currency"`
-		Description string  `json:"description"`
+		Amount      float64 `json:"amount" binding:"required,gt=0"`
+		Description string  `json:"description" binding:"required"`
 	}
+
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	paymentResponse, err := h.services.CreatePayment(request.Amount, request.Currency, request.Description)
+	paymentResponse, err := h.services.CreatePayment(request.Amount, request.Description)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"payment_url": paymentResponse.PaymentURL,
+	c.JSON(http.StatusCreated, gin.H{
+		"payment_id":  paymentResponse.ID,
+		"payment_url": paymentResponse.ConfirmationURL,
 	})
+
 }
 
 func (h *Handler) HandleWebhook(c *gin.Context) {

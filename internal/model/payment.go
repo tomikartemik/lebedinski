@@ -1,24 +1,29 @@
 package model
 
 type PaymentRequest struct {
-	Amount       Amount       `json:"amount"`
-	Description  string       `json:"description"`
-	Capture      bool         `json:"capture"`
-	Confirmation Confirmation `json:"confirmation"` // Добавьте это поле
+	Amount        Amount        `json:"amount"`
+	Description   string        `json:"description"`
+	Capture       bool          `json:"capture"`
+	Confirmation  Confirmation  `json:"confirmation"`
+	PaymentMethod PaymentMethod `json:"payment_method_data"`
 }
 
-type Confirmation struct {
-	Type      string `json:"type"`       // Тип подтверждения (например, "redirect")
-	ReturnURL string `json:"return_url"` // Куда перенаправить после оплаты
+type PaymentMethod struct {
+	Type string `json:"type"`
 }
 
 type Amount struct {
-	Value    string `json:"value"`    // Сумма платежа
-	Currency string `json:"currency"` // Валюта (например, "RUB")
+	Value    string `json:"value"`
+	Currency string `json:"currency"`
+}
+
+type Confirmation struct {
+	Type      string `json:"type"`
+	ReturnURL string `json:"return_url"`
 }
 
 type PaymentResponse struct {
-	ID         string `json:"id"`
-	Status     string `json:"status"`
-	PaymentURL string `json:"confirmation_url"` // Ссылка для оплаты
+	ID              string `json:"id"`
+	Status          string `json:"status"`
+	ConfirmationURL string `json:"confirmation_url"`
 }
