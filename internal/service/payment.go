@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"lebedinski/internal/model"
 	"lebedinski/internal/repository"
 	"net/http"
@@ -47,6 +48,7 @@ func (s *PaymentService) CreatePayment(amount float64, currency, description str
 
 	// Установка заголовков
 	req.SetBasicAuth(os.Getenv("SHOP_ID"), os.Getenv("SECRET_KEY"))
+	fmt.Println(req.Header.Get("Authorization"))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Idempotence-Key", "unique-key") // Уникальный ключ для идемпотентности
 
