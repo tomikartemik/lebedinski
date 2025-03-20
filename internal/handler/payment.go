@@ -1,9 +1,12 @@
 package handler
 
 import (
-	"fmt"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"os"
 )
 
 func (h *Handler) CreatePayment(c *gin.Context) {
@@ -31,6 +34,20 @@ func (h *Handler) CreatePayment(c *gin.Context) {
 }
 
 func (h *Handler) HandleWebhook(c *gin.Context) {
+	signature := c.GetHeader("Webhook-Signature")
+	body, _ := c.GetRawData()
+
+	// Генерация HMAC-SHA256 подписи
+	mac := hmac.New(sha256.New, []byte(os.Getenv("SECRET_KEY")))
+	mac.Write(body)
+	expectedSignature := hex.EncodeToString(mac.Sum(nil))
+
+	if signature != expectedSignature {
+		c.JSON(http.StatusForbidden, gin.H{"error": "invalid signature"})
+		return
+	}
+
+	// Парсинг уведомления
 	var notification struct {
 		Event  string `json:"event"`
 		Object struct {
@@ -38,17 +55,20 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 			Status string `json:"status"`
 		} `json:"object"`
 	}
+
 	if err := c.ShouldBindJSON(&notification); err != nil {
-		fmt.Println("invalid notification")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid body"})
 		return
 	}
 
+	// Обработка события
 	switch notification.Event {
 	case "payment.succeeded":
-		fmt.Println("Payment succeeded")
+		// Платеж успешен, обновите статус в БД
 	case "payment.canceled":
-		fmt.Println("Payment canceled")
-	default:
-		fmt.Println("Unknown event")
+		// Платеж отменен
 	}
+
+	c.Status(http.StatusOK) // Важно вернуть 200 OK!
+
 }
