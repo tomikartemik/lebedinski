@@ -51,13 +51,13 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 
 	// Парсинг заголовка
 	parts := strings.Split(signatureHeader, " ")
-	if len(parts) < 3 || parts[0] != "v1" {
+	if len(parts) != 3 || parts[0] != "v1" {
 		log.Println("Invalid signature format")
 		c.Status(http.StatusBadRequest)
 		return
 	}
-	signature := strings.Join(parts[1:len(parts)-1], " ")
-	keyID := parts[len(parts)-1]
+	signature := parts[1] // Подпись
+	keyID := parts[2]     // Key ID
 
 	// Логируем keyID
 	log.Printf("Key ID: %s", keyID)
