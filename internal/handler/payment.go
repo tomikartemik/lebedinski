@@ -4,8 +4,9 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
-	"fmt"
+	"encoding/json"
 	"github.com/gin-gonic/gin"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -37,43 +38,59 @@ func (h *Handler) CreatePayment(c *gin.Context) {
 
 func (h *Handler) HandleWebhook(c *gin.Context) {
 	signature := c.GetHeader("Webhook-Signature")
-	body, _ := c.GetRawData()
+	if signature == "" {
+		log.Println("Missing Webhook-Signature header")
+		c.Status(http.StatusBadRequest)
+		return
+	}
 
-	// Генерация HMAC-SHA256 подписи
+	// 2. Читаем тело ОДИН раз
+	body, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		log.Println("Error reading body:", err)
+		c.Status(http.StatusBadRequest)
+		return
+	}
+
+	// 3. Проверяем подпись
 	mac := hmac.New(sha256.New, []byte(os.Getenv("SECRET_KEY")))
 	mac.Write(body)
 	expectedSignature := hex.EncodeToString(mac.Sum(nil))
 
-	if signature != expectedSignature {
-		c.JSON(http.StatusForbidden, gin.H{"error": "invalid signature"})
+	if !hmac.Equal([]byte(signature), []byte(expectedSignature)) {
+		log.Println("Invalid signature received")
+		c.Status(http.StatusForbidden)
 		return
 	}
 
-	// Парсинг уведомления
+	// 4. Парсим тело заново
 	var notification struct {
 		Event  string `json:"event"`
 		Object struct {
 			ID     string `json:"id"`
 			Status string `json:"status"`
+			Amount struct {
+				Value string `json:"value"`
+			} `json:"amount"`
 		} `json:"object"`
 	}
 
-	if err := c.ShouldBindJSON(&notification); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid body"})
+	if err := json.Unmarshal(body, &notification); err != nil {
+		log.Println("JSON parse error:", err)
+		c.Status(http.StatusBadRequest)
 		return
 	}
 
-	fmt.Println(notification.Object.Status)
-	log.Println(notification.Object.Status)
+	// 5. Логируем всю информацию
+	log.Printf(
+		"Webhook received: Event=%s, ID=%s, Status=%s, Amount=%s\n",
+		notification.Event,
+		notification.Object.ID,
+		notification.Object.Status,
+		notification.Object.Amount.Value,
+	)
 
-	// Обработка события
-	switch notification.Event {
-	case "payment.succeeded":
-		fmt.Println(notification.Object.Status)
-	case "payment.canceled":
-		fmt.Println(notification.Object.Status)
-	}
-
-	c.Status(http.StatusOK) // Важно вернуть 200 OK!
+	// 6. Всегда возвращаем 200 OK
+	c.Status(http.StatusOK)
 
 }
