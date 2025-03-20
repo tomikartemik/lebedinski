@@ -3,7 +3,7 @@ package handler
 import (
 	"crypto/hmac"
 	"crypto/sha256"
-	"encoding/hex"
+	"encoding/base64"
 	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"io"
@@ -38,11 +38,10 @@ func (h *Handler) CreatePayment(c *gin.Context) {
 }
 
 func (h *Handler) HandleWebhook(c *gin.Context) {
-	// Логируем IP и заголовки
 	log.Printf("Request from IP: %s", c.Request.RemoteAddr)
 	log.Printf("Headers: %+v", c.Request.Header)
 
-	// Проверяем наличие подписи
+	// Проверка заголовка
 	signatureHeader := c.GetHeader("Signature")
 	if signatureHeader == "" {
 		log.Println("Missing Signature header")
@@ -50,16 +49,20 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 		return
 	}
 
-	// Извлекаем подпись из заголовка
+	// Парсинг заголовка
 	parts := strings.Split(signatureHeader, " ")
-	if len(parts) != 3 || parts[0] != "v1" {
+	if len(parts) < 3 || parts[0] != "v1" {
 		log.Println("Invalid signature format")
 		c.Status(http.StatusBadRequest)
 		return
 	}
-	signature := parts[1] // Извлекаем саму подпись
+	signature := strings.Join(parts[1:len(parts)-1], " ")
+	keyID := parts[len(parts)-1]
 
-	// Читаем тело
+	// Логируем keyID
+	log.Printf("Key ID: %s", keyID)
+
+	// Чтение тела
 	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		log.Println("Error reading body:", err)
@@ -67,18 +70,26 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 		return
 	}
 
-	// Проверяем подпись
+	// Декодирование подписи
+	decodedSignature, err := base64.StdEncoding.DecodeString(signature)
+	if err != nil {
+		log.Println("Base64 decode error:", err)
+		c.Status(http.StatusBadRequest)
+		return
+	}
+
+	// Проверка подписи
 	mac := hmac.New(sha256.New, []byte(os.Getenv("SECRET_KEY")))
 	mac.Write(body)
-	expectedSignature := hex.EncodeToString(mac.Sum(nil))
+	expectedSignature := mac.Sum(nil)
 
-	if !hmac.Equal([]byte(signature), []byte(expectedSignature)) {
-		log.Println("Invalid signature received")
+	if !hmac.Equal(decodedSignature, expectedSignature) {
+		log.Println("Invalid signature")
 		c.Status(http.StatusForbidden)
 		return
 	}
 
-	// Парсим тело
+	// Парсинг тела
 	var notification struct {
 		Event  string `json:"event"`
 		Object struct {
@@ -96,15 +107,13 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 		return
 	}
 
-	// Логируем информацию
 	log.Printf(
-		"Webhook received: Event=%s, ID=%s, Status=%s, Amount=%s\n",
+		"Webhook received: Event=%s, ID=%s, Status=%s, Amount=%s",
 		notification.Event,
 		notification.Object.ID,
 		notification.Object.Status,
 		notification.Object.Amount.Value,
 	)
 
-	// Возвращаем 200 OK
 	c.Status(http.StatusOK)
 }
