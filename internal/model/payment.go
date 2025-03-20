@@ -1,10 +1,15 @@
 package model
 
 type PaymentRequest struct {
-	Amount      Amount `json:"amount"`
-	Description string `json:"description"`
-	RedirectURL string `json:"confirmation_url"` // Куда перенаправить после оплаты
-	Capture     bool   `json:"capture"`          // Автоматическое подтверждение платежа
+	Amount       Amount       `json:"amount"`
+	Description  string       `json:"description"`
+	Capture      bool         `json:"capture"`
+	Confirmation Confirmation `json:"confirmation"` // Добавьте это поле
+}
+
+type Confirmation struct {
+	Type      string `json:"type"`       // Тип подтверждения (например, "redirect")
+	ReturnURL string `json:"return_url"` // Куда перенаправить после оплаты
 }
 
 type Amount struct {
