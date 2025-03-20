@@ -1,11 +1,16 @@
 package handler
 
 import (
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"io"
 	"log"
 	"net/http"
+	"os"
+	"strings"
 )
 
 func (h *Handler) CreatePayment(c *gin.Context) {
@@ -33,17 +38,16 @@ func (h *Handler) CreatePayment(c *gin.Context) {
 }
 
 func (h *Handler) HandleWebhook(c *gin.Context) {
-	// Логируем IP и заголовки
 	log.Printf("Request from IP: %s", c.Request.RemoteAddr)
 	log.Printf("Headers: %+v", c.Request.Header)
 
-	// Временно отключаем проверку подписи
-	// signature := c.GetHeader("Webhook-Signature")
-	// if signature == "" {
-	//     log.Println("Missing Webhook-Signature header")
-	//     c.Status(http.StatusBadRequest)
-	//     return
-	// }
+	// Проверяем наличие подписи
+	signature := c.GetHeader("Signature")
+	if signature == "" {
+		log.Println("Missing Signature header")
+		c.Status(http.StatusBadRequest)
+		return
+	}
 
 	// Читаем тело
 	body, err := io.ReadAll(c.Request.Body)
@@ -53,16 +57,26 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 		return
 	}
 
-	// Временно отключаем проверку подписи
-	// mac := hmac.New(sha256.New, []byte(os.Getenv("SECRET_KEY")))
-	// mac.Write(body)
-	// expectedSignature := hex.EncodeToString(mac.Sum(nil))
+	// Проверяем подпись
+	mac := hmac.New(sha256.New, []byte(os.Getenv("SECRET_KEY")))
+	mac.Write(body)
+	expectedSignature := hex.EncodeToString(mac.Sum(nil))
 
-	// if !hmac.Equal([]byte(signature), []byte(expectedSignature)) {
-	//     log.Println("Invalid signature received")
-	//     c.Status(http.StatusForbidden)
-	//     return
-	// }
+	// Подпись от ЮКассы приходит в формате "v1 <signature>"
+	// Извлекаем только саму подпись
+	parts := strings.Split(signature, " ")
+	if len(parts) != 3 {
+		log.Println("Invalid signature format")
+		c.Status(http.StatusBadRequest)
+		return
+	}
+	actualSignature := parts[1]
+
+	if !hmac.Equal([]byte(actualSignature), []byte(expectedSignature)) {
+		log.Println("Invalid signature received")
+		c.Status(http.StatusForbidden)
+		return
+	}
 
 	// Парсим тело
 	var notification struct {
@@ -93,4 +107,5 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 
 	// Возвращаем 200 OK
 	c.Status(http.StatusOK)
+
 }
