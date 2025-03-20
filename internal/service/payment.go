@@ -26,8 +26,8 @@ func (s *PaymentService) CreatePayment(amount float64, currency, description str
 			Currency: currency,
 		},
 		Description: description,
-		RedirectURL: "https://your-site.com/redirect", // Куда перенаправить после оплаты
-		Capture:     true,                             // Автоматическое подтверждение платежа
+		RedirectURL: "https://tomikartemik.ru", // Куда перенаправить после оплаты
+		Capture:     true,                      // Автоматическое подтверждение платежа
 	}
 
 	// Сериализация запроса в JSON
