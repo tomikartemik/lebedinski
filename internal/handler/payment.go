@@ -38,16 +38,26 @@ func (h *Handler) CreatePayment(c *gin.Context) {
 }
 
 func (h *Handler) HandleWebhook(c *gin.Context) {
+	// Логируем IP и заголовки
 	log.Printf("Request from IP: %s", c.Request.RemoteAddr)
 	log.Printf("Headers: %+v", c.Request.Header)
 
 	// Проверяем наличие подписи
-	signature := c.GetHeader("Signature")
-	if signature == "" {
+	signatureHeader := c.GetHeader("Signature")
+	if signatureHeader == "" {
 		log.Println("Missing Signature header")
 		c.Status(http.StatusBadRequest)
 		return
 	}
+
+	// Извлекаем подпись из заголовка
+	parts := strings.Split(signatureHeader, " ")
+	if len(parts) != 3 || parts[0] != "v1" {
+		log.Println("Invalid signature format")
+		c.Status(http.StatusBadRequest)
+		return
+	}
+	signature := parts[1] // Извлекаем саму подпись
 
 	// Читаем тело
 	body, err := io.ReadAll(c.Request.Body)
@@ -62,17 +72,7 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 	mac.Write(body)
 	expectedSignature := hex.EncodeToString(mac.Sum(nil))
 
-	// Подпись от ЮКассы приходит в формате "v1 <signature>"
-	// Извлекаем только саму подпись
-	parts := strings.Split(signature, " ")
-	if len(parts) != 3 {
-		log.Println("Invalid signature format")
-		c.Status(http.StatusBadRequest)
-		return
-	}
-	actualSignature := parts[1]
-
-	if !hmac.Equal([]byte(actualSignature), []byte(expectedSignature)) {
+	if !hmac.Equal([]byte(signature), []byte(expectedSignature)) {
 		log.Println("Invalid signature received")
 		c.Status(http.StatusForbidden)
 		return
@@ -107,5 +107,4 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 
 	// Возвращаем 200 OK
 	c.Status(http.StatusOK)
-
 }
