@@ -14,6 +14,7 @@ type Service struct {
 	Order
 	Payment
 	Cart
+	Cdek
 }
 
 func NewService(repos *repository.Repository) *Service {
@@ -22,9 +23,9 @@ func NewService(repos *repository.Repository) *Service {
 		Photo:    NewPhotoService(repos),
 		Size:     NewSizeService(repos),
 		Category: NewCategoryService(repos),
-		Order:    NewOrderService(repos),
 		Payment:  NewPaymentService(repos),
 		Cart:     NewCartService(repos.Cart, repos.Item),
+		Cdek:     NewCdekService(repos.Item),
 	}
 }
 
@@ -59,4 +60,10 @@ type Payment interface {
 
 type Cart interface {
 	CreateValidCart(items []model.CartItem) (int, error)
+}
+
+type Cdek interface {
+	GetToken() (string, error)
+	GetCityCode(cityName string) (string, error)
+	CreateCdekOrder(order model.Order) (string, error)
 }

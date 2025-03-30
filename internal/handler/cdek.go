@@ -5,7 +5,6 @@ import (
 	"lebedinski/internal/model"
 	"lebedinski/internal/utils"
 	"net/http"
-	"strconv"
 )
 
 func (h *Handler) CreateOrder(c *gin.Context) {
@@ -16,23 +15,11 @@ func (h *Handler) CreateOrder(c *gin.Context) {
 		return
 	}
 
-	id, err := h.services.CreateOrder(order)
+	cdekUUID, err := h.services.CreateCdekOrder(order)
 	if err != nil {
 		utils.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, "OrderID: "+strconv.Itoa(id))
-}
-
-func (h *Handler) GetOrderByID(c *gin.Context) {
-	idStr := c.Query("id")
-
-	order, err := h.services.GetOrderByID(idStr)
-	if err != nil {
-		utils.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	c.JSON(http.StatusOK, order)
+	c.JSON(http.StatusOK, model.SuccessResponse{Message: cdekUUID})
 }
