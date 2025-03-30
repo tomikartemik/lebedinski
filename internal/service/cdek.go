@@ -67,6 +67,7 @@ func (s *CdekService) GetCityCode(cityName string) (string, error) {
 	}
 
 	if resp.StatusCode() != http.StatusOK {
+		fmt.Println(resp.Body())
 		var errorResp struct {
 			Message string `json:"message"`
 		}
