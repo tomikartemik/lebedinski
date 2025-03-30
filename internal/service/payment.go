@@ -14,10 +14,10 @@ import (
 )
 
 type PaymentService struct {
-	repo repository.Order
+	repo repository.Item
 }
 
-func NewPaymentService(orderRepo repository.Order) *PaymentService {
+func NewPaymentService(orderRepo repository.Item) *PaymentService {
 	return &PaymentService{repo: orderRepo}
 }
 
