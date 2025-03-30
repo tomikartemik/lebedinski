@@ -7,6 +7,7 @@ import (
 	"github.com/go-resty/resty/v2"
 	"lebedinski/internal/model"
 	"lebedinski/internal/repository"
+	"net/http"
 	"os"
 )
 
@@ -51,6 +52,7 @@ func (s *CdekService) GetCityCode(cityName string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	client := resty.New()
 	resp, err := client.R().
 		SetHeader("Authorization", "Bearer "+token).
@@ -62,6 +64,16 @@ func (s *CdekService) GetCityCode(cityName string) (string, error) {
 
 	if err != nil {
 		return "", err
+	}
+
+	if resp.StatusCode() != http.StatusOK {
+		var errorResp struct {
+			Message string `json:"message"`
+		}
+		if err := json.Unmarshal(resp.Body(), &errorResp); err != nil {
+			return "", fmt.Errorf("API error: %s", resp.String())
+		}
+		return "", fmt.Errorf("API error: %s", errorResp.Message)
 	}
 
 	var cities []struct {
@@ -87,7 +99,7 @@ func (s *CdekService) CreateCdekOrder(order model.Order) (string, error) {
 
 	cdekReq := &model.CdekOrderRequest{
 		Number:     fmt.Sprint(order.CartID),
-		TariffCode: 137, // Укажите нужный тариф, например, 137 для доставки до пункта
+		TariffCode: 136,
 		Recipient: struct {
 			Name  string `json:"name"`
 			Phone string `json:"phone"`
