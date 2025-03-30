@@ -13,6 +13,7 @@ type Service struct {
 	Category
 	Order
 	Payment
+	Cart
 }
 
 func NewService(repos *repository.Repository) *Service {
@@ -23,6 +24,7 @@ func NewService(repos *repository.Repository) *Service {
 		Category: NewCategoryService(repos),
 		Order:    NewOrderService(repos),
 		Payment:  NewPaymentService(repos),
+		Cart:     NewCartService(repos.Cart, repos.Item),
 	}
 }
 
@@ -53,4 +55,8 @@ type Order interface {
 
 type Payment interface {
 	CreatePayment(amount float64, description string) (*model.PaymentResponse, error)
+}
+
+type Cart interface {
+	CreateValidCart(items []model.CartItem) (int, error)
 }

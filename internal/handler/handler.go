@@ -73,5 +73,10 @@ func (h *Handler) InitRoutes() *gin.Engine {
 		payment.POST("/new", h.CreatePayment)
 		payment.POST("/response", h.HandleWebhook)
 	}
+
+	cart := router.Group("cart")
+	{
+		cart.POST("/create", h.CreateCart)
+	}
 	return router
 }

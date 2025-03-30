@@ -11,6 +11,7 @@ type Repository struct {
 	Size
 	Category
 	Order
+	Cart
 }
 
 func NewRepository(db *gorm.DB) *Repository {
@@ -20,6 +21,7 @@ func NewRepository(db *gorm.DB) *Repository {
 		Size:     NewSizeRepository(db),
 		Category: NewCategoryRepository(db),
 		Order:    NewOrderRepository(db),
+		Cart:     NewCartRepository(db),
 	}
 }
 
@@ -46,4 +48,9 @@ type Category interface {
 type Order interface {
 	CreateOrder(order model.Order) (int, error)
 	GetOrderByID(id int) (model.Order, error)
+}
+
+type Cart interface {
+	CreateCart(cart *model.Cart) error
+	GetCartByID(cartID int) (*model.Cart, error)
 }

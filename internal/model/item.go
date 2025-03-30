@@ -28,10 +28,10 @@ type ItemShortInfo struct {
 	Photos      []Photo  `json:"photos"`
 }
 
-type OrderItem struct {
-	ID       int    `gorm:"primaryKey;uniqueIndex;autoIncrement;primaryKey" json:"id"`
+type CartItem struct {
+	ID       int    `gorm:"primaryKey;autoIncrement" json:"id"`
 	ItemID   int    `gorm:"not null" json:"item_id"`
-	Quantity int    `gorm:"not null" json:"Quantity"`
+	Quantity int    `gorm:"not null" json:"quantity"`
 	Size     string `gorm:"not null" json:"size"`
-	OrderID  int    `gorm:"not null" json:"order_id"`
+	CartID   int    `gorm:"not null" json:"cart_id"`
 }
