@@ -26,19 +26,13 @@ func (s *CartService) CreateValidCart(items []model.CartItem) (int, error) {
 		}
 
 		if item.SoldOut {
-			return 0, fmt.Errorf("item %d is sold out", ci.ItemID)
+			return 0, fmt.Errorf("item %d in is sold out", ci.ItemID)
 		}
 
-		validSize := false
 		for _, size := range item.Sizes {
 			if size.Size == ci.Size && size.Stock >= ci.Quantity {
-				validSize = true
-				break
+				return 0, fmt.Errorf("itemID: %d size: %s stock: %d", ci.ItemID, ci.Size, size.Stock)
 			}
-		}
-
-		if !validSize {
-			return 0, fmt.Errorf("invalid size or quantity for item %d", ci.ItemID)
 		}
 	}
 
