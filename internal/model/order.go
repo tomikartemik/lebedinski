@@ -1,7 +1,7 @@
 package model
 
 type Order struct {
-	CartID         int    `gorm:"not null" json:"cart_id"`
+	CartID         int    `gorm:"unique;not null" json:"cart_id"`
 	FullName       string `gorm:"not null" json:"full_name"`
 	Email          string `gorm:"not null" json:"email"`
 	Phone          string `gorm:"not null" json:"phone"`
