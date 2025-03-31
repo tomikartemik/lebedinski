@@ -9,16 +9,19 @@ import (
 	"lebedinski/internal/repository"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 )
 
 type CdekService struct {
-	itemRepo repository.Item
+	repoItem  repository.Item
+	repoOrder repository.Order
 }
 
-func NewCdekService(itemRepo repository.Item) *CdekService {
+func NewCdekService(itemRepo repository.Item, repoOrder repository.Order) *CdekService {
 	return &CdekService{
-		itemRepo: itemRepo,
+		repoItem:  itemRepo,
+		repoOrder: repoOrder,
 	}
 }
 
@@ -48,7 +51,18 @@ func (s *CdekService) GetToken() (string, error) {
 	return tokenResp.AccessToken, nil
 }
 
-func (s *CdekService) CreateCdekOrder(order model.Order) (string, error) {
+func (s *CdekService) CreateCdekOrder(cartIDStr string) (string, error) {
+	cartID, err := strconv.Atoi(cartIDStr)
+
+	if err != nil {
+		return "", err
+	}
+
+	order, err := s.repoOrder.GetOrderByCartID(cartID)
+	if err != nil {
+		return "", err
+	}
+
 	token, err := s.GetToken()
 	if err != nil {
 		return "", fmt.Errorf("failed to get CDEK token: %w", err)

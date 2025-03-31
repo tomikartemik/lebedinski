@@ -6,33 +6,31 @@ import (
 	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"io"
-	"lebedinski/internal/model"
-	"lebedinski/internal/utils"
 	"log"
 	"net/http"
 	"os"
 )
 
-func (h *Handler) CreatePayment(c *gin.Context) {
-	var order model.Order
-
-	if err := c.ShouldBindJSON(&order); err != nil {
-		utils.NewErrorResponse(c, http.StatusBadRequest, err.Error())
-		return
-	}
-
-	paymentResponse, err := h.services.CreatePayment(order)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusCreated, gin.H{
-		"payment_id":  paymentResponse.ID,
-		"payment_url": paymentResponse.Confirmation.ConfirmationURL,
-	})
-
-}
+//func (h *Handler) CreatePayment(c *gin.Context) {
+//	var order model.Order
+//
+//	if err := c.ShouldBindJSON(&order); err != nil {
+//		utils.NewErrorResponse(c, http.StatusBadRequest, err.Error())
+//		return
+//	}
+//
+//	paymentResponse, err := h.services.CreatePayment(order)
+//	if err != nil {
+//		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+//		return
+//	}
+//
+//	c.JSON(http.StatusCreated, gin.H{
+//		"payment_id":  paymentResponse.ID,
+//		"payment_url": paymentResponse.Confirmation.ConfirmationURL,
+//	})
+//
+//}
 
 func (h *Handler) HandleWebhook(c *gin.Context) {
 
@@ -49,9 +47,10 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 	var notification struct {
 		Event  string `json:"event"`
 		Object struct {
-			ID     string `json:"id"`
-			Status string `json:"status"`
-			Amount struct {
+			ID          string `json:"id"`
+			Status      string `json:"status"`
+			Description string `json:"description"`
+			Amount      struct {
 				Value string `json:"value"`
 			} `json:"amount"`
 		} `json:"object"`
@@ -63,13 +62,17 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 		return
 	}
 
-	log.Printf(
-		"Webhook received: Event=%s, ID=%s, Status=%s, Amount=%s",
-		notification.Event,
-		notification.Object.ID,
-		notification.Object.Status,
-		notification.Object.Amount.Value,
-	)
+	//log.Printf(
+	//	"Webhook received: Event=%s, ID=%s, Status=%s, Amount=%s",
+	//	notification.Event,
+	//	notification.Object.ID,
+	//	notification.Object.Status,
+	//	notification.Object.Amount.Value,
+	//)
+
+	if notification.Object.Status != "succeeded" {
+		h.services.CreateCdekOrder(notification.Object.Description)
+	}
 
 	c.Status(http.StatusOK)
 }

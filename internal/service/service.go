@@ -67,5 +67,5 @@ type Cart interface {
 
 type Cdek interface {
 	GetToken() (string, error)
-	CreateCdekOrder(order model.Order) (string, error)
+	CreateCdekOrder(cartIDStr string) (string, error)
 }
