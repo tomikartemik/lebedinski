@@ -174,5 +174,8 @@ func (s *CdekService) CreateCdekOrder(cartIDStr string) (string, error) {
 		return "", fmt.Errorf("CDEK response successful, but UUID is empty. Body: %s", resp.String())
 	}
 
+	order.CdekOrderUUID = cdekResp.Entity.UUID
+	s.repoOrder.SaveOrder(order)
+
 	return cdekResp.Entity.UUID, nil
 }

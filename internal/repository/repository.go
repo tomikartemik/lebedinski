@@ -56,4 +56,5 @@ type Order interface {
 	GetCartItemsByCartID(cartID int) ([]model.CartItem, error)
 	GetAllOrders() ([]model.Order, error)
 	GetOrderByCartID(id int) (model.Order, error)
+	UpdateOrder(order model.Order) error
 }

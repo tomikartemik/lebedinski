@@ -41,3 +41,7 @@ func (r *OrderRepository) GetOrderByCartID(id int) (model.Order, error) {
 	}
 	return order, nil
 }
+
+func (r *OrderRepository) UpdateOrder(order model.Order) error {
+	return r.db.Save(&order).Error
+}
