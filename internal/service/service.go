@@ -25,7 +25,7 @@ func NewService(repos *repository.Repository) *Service {
 		Category: NewCategoryService(repos),
 		Payment:  NewPaymentService(repos.Item, repos.Cart),
 		Cart:     NewCartService(repos.Cart, repos.Item),
-		Cdek:     NewCdekService(repos.Item),
+		Cdek:     NewCdekService(repos.Item, repos.Order),
 		Order:    NewOrderService(repos.Item, repos.Order, repos.Size),
 	}
 }
