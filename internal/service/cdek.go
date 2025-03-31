@@ -38,114 +38,40 @@ func (s *CdekService) GetToken() (string, error) {
 		return "", err
 	}
 
-	// Логируем тело ответа перед разбором JSON
-	fmt.Println("DEBUG: CDEK Token Response Body:", resp.String())
-
 	var tokenResp struct {
 		AccessToken string `json:"access_token"`
 	}
 	if err := json.Unmarshal(resp.Body(), &tokenResp); err != nil {
-		// Логируем ошибку разбора JSON
-		fmt.Println("ERROR: Failed to unmarshal CDEK token response:", err, "Body:", resp.String())
 		return "", err
 	}
 
-	fmt.Println("DEBUG: Received CDEK Token:", tokenResp.AccessToken)
 	return tokenResp.AccessToken, nil
-}
-
-func (s *CdekService) GetCityCode(cityName string) (string, error) {
-	token, err := s.GetToken()
-	if err != nil {
-		return "", err
-	}
-
-	client := resty.New()
-	resp, err := client.R().
-		SetHeader("Authorization", "Bearer "+token).
-		SetQueryParams(map[string]string{
-			"city":          cityName,
-			"country_codes": "RU",
-		}).
-		Get("https://api.cdek.ru/v2/location/cities")
-
-	if err != nil {
-		return "", err
-	}
-
-	if resp.StatusCode() != http.StatusOK {
-		fmt.Println(resp.Body())
-		var errorResp struct {
-			Message string `json:"message"`
-		}
-		if err := json.Unmarshal(resp.Body(), &errorResp); err != nil {
-			return "", fmt.Errorf("API error: %s", resp.String())
-		}
-		return "", fmt.Errorf("API error: %s", errorResp.Message)
-	}
-
-	var cities []struct {
-		Code string `json:"code"`
-	}
-	if err := json.Unmarshal(resp.Body(), &cities); err != nil {
-		return "", err
-	}
-
-	if len(cities) == 0 {
-		return "", errors.New("город не найден")
-	}
-
-	return cities[0].Code, nil
 }
 
 func (s *CdekService) CreateCdekOrder(order model.Order) (string, error) {
 	token, err := s.GetToken()
 	if err != nil {
-		fmt.Println("ERROR: Failed to get CDEK token:", err)
 		return "", fmt.Errorf("failed to get CDEK token: %w", err)
 	}
-	fmt.Println("DEBUG: Using CDEK Token for CreateOrder:", token)
 
-	// Получаем данные отправителя из переменных окружения
 	shipmentPoint := os.Getenv("SHIPMENT_POINT")
-	// Убираем чтение CDEK_CODE и CDEK_ADDRESS, т.к. нужно либо ShipmentPoint, либо FromLocation
-	// cdekCodeStr := os.Getenv("CDEK_CODE")
-	// cdekAddress := os.Getenv("CDEK_ADDRESS")
-
-	// Проверяем, что переменная SHIPMENT_POINT установлена
-	if shipmentPoint == "" {
-		return "", errors.New("переменная окружения для пункта отправки (SHIPMENT_POINT) не установлена")
-	}
-
-	// Убираем преобразование CDEK_CODE
-	/*
-	   cdekCodeInt, err := strconv.Atoi(cdekCodeStr)
-	   if err != nil {
-	       return "", fmt.Errorf("не удалось преобразовать CDEK_CODE ('%s') в число: %w", cdekCodeStr, err)
-	   }
-	*/
 
 	cdekReq := model.CdekOrderRequest{
 		Number:     fmt.Sprint(order.CartID),
-		TariffCode: 136, // ВАЖНО: Проверь и замени тариф (напр. 137 для ПВЗ)!
+		TariffCode: 136,
 		Recipient: model.CdekRecipient{
 			Name: order.FullName,
 			Phones: []model.CdekPhone{
 				{Number: order.Phone},
 			},
-			Email: order.Email, // Будет опущено, если пустое, т.к. omitempty
+			Email: order.Email,
 		},
-		DeliveryPoint: order.PointCode, // Код ПВЗ назначения
-		ShipmentPoint: shipmentPoint,   // Оставляем ТОЛЬКО код пункта отправки из env
-		// Убираем FromLocation, т.к. нельзя указывать одновременно с ShipmentPoint
-		// FromLocation: &model.CdekLocation{
-		// 	Code:    cdekCodeInt,
-		// 	Address: cdekAddress,
-		// },
-		// ЗАПОЛНЯЕМ ПЛЕЙСХОЛДЕРАМИ! Замени Packages на реальные данные из order!
+		DeliveryPoint: order.PointCode,
+		ShipmentPoint: shipmentPoint,
+
 		Packages: []model.CdekPackage{
 			{
-				Number: fmt.Sprintf("%s-1", order.CartID), // Номер места
+				Number: fmt.Sprintf("%s-1", order.CartID),
 				Weight: 1000,
 				Length: 10,
 				Width:  10,
@@ -177,7 +103,7 @@ func (s *CdekService) CreateCdekOrder(order model.Order) (string, error) {
 		return "", err
 	}
 
-	if resp.StatusCode() != http.StatusOK && resp.StatusCode() != http.StatusCreated {
+	if resp.StatusCode() != http.StatusOK && resp.StatusCode() != http.StatusAccepted {
 		errorMsg := fmt.Sprintf("CDEK API error: Status %s", resp.Status())
 		var errorResp struct {
 			Requests []struct {

@@ -26,6 +26,7 @@ func NewService(repos *repository.Repository) *Service {
 		Payment:  NewPaymentService(repos),
 		Cart:     NewCartService(repos.Cart, repos.Item),
 		Cdek:     NewCdekService(repos.Item),
+		Order:    NewOrderService(repos.Item, repos.Order, repos.Size),
 	}
 }
 
@@ -50,8 +51,7 @@ type Category interface {
 }
 
 type Order interface {
-	CreateOrder(order model.Order) (int, error)
-	GetOrderByID(idStr string) (model.Order, error)
+	ProcessOrder(order model.Order, cdekUUID string) error
 }
 
 type Payment interface {
@@ -64,6 +64,5 @@ type Cart interface {
 
 type Cdek interface {
 	GetToken() (string, error)
-	GetCityCode(cityName string) (string, error)
 	CreateCdekOrder(order model.Order) (string, error)
 }

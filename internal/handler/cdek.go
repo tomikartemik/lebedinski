@@ -21,5 +21,10 @@ func (h *Handler) CreateOrder(c *gin.Context) {
 		return
 	}
 
+	err = h.services.ProcessOrder(order, cdekUUID)
+	if err != nil {
+		utils.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
+	}
+
 	c.JSON(http.StatusOK, model.SuccessResponse{Message: cdekUUID})
 }
