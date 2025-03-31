@@ -9,6 +9,7 @@ import (
 	"lebedinski/internal/repository"
 	"net/http"
 	"os"
+	"strings"
 )
 
 type CdekService struct {
@@ -93,40 +94,50 @@ func (s *CdekService) GetCityCode(cityName string) (string, error) {
 
 func (s *CdekService) CreateCdekOrder(order model.Order) (string, error) {
 	token, err := s.GetToken()
-	cityCode, err := s.GetCityCode(order.City)
 	if err != nil {
 		return "", err
 	}
 
-	cdekReq := &model.CdekOrderRequest{
+	cdekReq := model.CdekOrderRequest{
 		Number:     fmt.Sprint(order.CartID),
 		TariffCode: 136,
 		Recipient: struct {
 			Name  string `json:"name"`
 			Phone string `json:"phone"`
-			Email string `json:"email"`
+			Email string `json:"email,omitempty"`
 		}{
 			Name:  order.FullName,
 			Phone: order.Phone,
 			Email: order.Email,
 		},
-		ToLocation: struct {
-			Code    string `json:"code"`
-			Address string `json:"address"`
-			City    string `json:"city"`
-			Country string `json:"country"`
-		}{
-			Code:    cityCode,
-			Address: order.Address,
-			City:    order.City,
-			Country: "RU",
+		DeliveryPoint: order.PointCode,
+		Packages: []model.CdekPackage{
+			{
+				Number: fmt.Sprintf("%s-1", order.CartID),
+				Weight: 1000,
+				Length: 10,
+				Width:  10,
+				Height: 10,
+				Items: []model.CdekPackageItem{
+					{
+						Name:    "Пример товара",
+						WareKey: "ART-001",
+						Payment: model.CdekPayment{
+							Value: 0,
+						},
+						Cost:   1.0,
+						Weight: 1000,
+						Amount: 1,
+					},
+				},
+			},
 		},
-		DeliveryCost: order.DeliveryCost,
 	}
 
 	client := resty.New()
 	resp, err := client.R().
 		SetHeader("Authorization", "Bearer "+token).
+		SetHeader("Content-Type", "application/json").
 		SetBody(cdekReq).
 		Post("https://api.cdek.ru/v2/orders")
 
@@ -134,13 +145,61 @@ func (s *CdekService) CreateCdekOrder(order model.Order) (string, error) {
 		return "", err
 	}
 
+	if resp.StatusCode() != http.StatusOK && resp.StatusCode() != http.StatusCreated {
+		errorMsg := fmt.Sprintf("CDEK API error: Status %s", resp.Status())
+		var errorResp struct {
+			Requests []struct {
+				Errors []struct {
+					Code    string `json:"code"`
+					Message string `json:"message"`
+				} `json:"errors"`
+				State string `json:"state"`
+			} `json:"requests"`
+		}
+		if err := json.Unmarshal(resp.Body(), &errorResp); err == nil && len(errorResp.Requests) > 0 && len(errorResp.Requests[0].Errors) > 0 {
+			var errorDetails []string
+			for _, req := range errorResp.Requests {
+				for _, e := range req.Errors {
+					errorDetails = append(errorDetails, fmt.Sprintf("[%s] %s", e.Code, e.Message))
+				}
+			}
+			if len(errorDetails) > 0 {
+				errorMsg = fmt.Sprintf("%s. Details: %s", errorMsg, strings.Join(errorDetails, "; "))
+			}
+		} else {
+			errorMsg = fmt.Sprintf("%s. Response Body: %s", errorMsg, resp.String())
+		}
+		return "", errors.New(errorMsg)
+	}
+
 	var cdekResp struct {
 		Entity struct {
 			UUID string `json:"uuid"`
 		} `json:"entity"`
+		Requests []struct {
+			Errors []struct {
+				Code    string `json:"code"`
+				Message string `json:"message"`
+			} `json:"errors"`
+			State string `json:"state"`
+		} `json:"requests"`
 	}
 	if err := json.Unmarshal(resp.Body(), &cdekResp); err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to unmarshal CDEK response: %w. Body: %s", err, resp.String())
+	}
+
+	if len(cdekResp.Requests) > 0 && len(cdekResp.Requests[0].Errors) > 0 {
+		var errorDetails []string
+		for _, req := range cdekResp.Requests {
+			for _, e := range req.Errors {
+				errorDetails = append(errorDetails, fmt.Sprintf("[%s] %s", e.Code, e.Message))
+			}
+		}
+		return "", fmt.Errorf("CDEK returned success status but with errors: %s", strings.Join(errorDetails, "; "))
+	}
+
+	if cdekResp.Entity.UUID == "" {
+		return "", fmt.Errorf("CDEK response successful, but UUID is empty. Body: %s", resp.String())
 	}
 
 	return cdekResp.Entity.UUID, nil
