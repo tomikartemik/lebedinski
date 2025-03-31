@@ -45,6 +45,7 @@ func (s *CdekService) GetToken() (string, error) {
 		return "", err
 	}
 
+	fmt.Println("DEBUG: Received CDEK Token:", tokenResp.AccessToken)
 	return tokenResp.AccessToken, nil
 }
 
@@ -95,8 +96,10 @@ func (s *CdekService) GetCityCode(cityName string) (string, error) {
 func (s *CdekService) CreateCdekOrder(order model.Order) (string, error) {
 	token, err := s.GetToken()
 	if err != nil {
-		return "", err
+		fmt.Println("ERROR: Failed to get CDEK token:", err)
+		return "", fmt.Errorf("failed to get CDEK token: %w", err)
 	}
+	fmt.Println("DEBUG: Using CDEK Token for CreateOrder:", token)
 
 	cdekReq := model.CdekOrderRequest{
 		Number:     fmt.Sprint(order.CartID),
