@@ -44,3 +44,17 @@ func (s *OrderService) ProcessOrder(order model.Order, cdekUUID string) error {
 	}
 	return nil
 }
+
+func (s *OrderService) GetAllOrders() ([]model.Order, error) {
+	return s.repoOrder.GetAllOrders()
+}
+
+func (s *OrderService) GetOrderByCartID(id int) (model.Order, error) {
+	order, err := s.repoOrder.GetOrderByCartID(id)
+
+	if err != nil {
+		return model.Order{}, err
+	}
+
+	return order, nil
+}

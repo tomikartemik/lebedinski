@@ -52,6 +52,8 @@ type Category interface {
 
 type Order interface {
 	ProcessOrder(order model.Order, cdekUUID string) error
+	GetAllOrders() ([]model.Order, error)
+	GetOrderByCartID(id int) (model.Order, error)
 }
 
 type Payment interface {

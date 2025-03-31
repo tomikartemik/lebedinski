@@ -54,4 +54,6 @@ type Cart interface {
 type Order interface {
 	SaveOrder(order model.Order) error
 	GetCartItemsByCartID(cartID int) ([]model.CartItem, error)
+	GetAllOrders() ([]model.Order, error)
+	GetOrderByCartID(id int) (model.Order, error)
 }

@@ -25,3 +25,19 @@ func (r *OrderRepository) GetCartItemsByCartID(cartID int) ([]model.CartItem, er
 	}
 	return cartItems, nil
 }
+
+func (r *OrderRepository) GetAllOrders() ([]model.Order, error) {
+	var orders []model.Order
+	if err := r.db.Find(&orders).Error; err != nil {
+		return nil, err
+	}
+	return orders, nil
+}
+
+func (r *OrderRepository) GetOrderByCartID(id int) (model.Order, error) {
+	var order model.Order
+	if err := r.db.Where("cart_id = ?", id).First(&order).Error; err != nil {
+		return order, err
+	}
+	return order, nil
+}
