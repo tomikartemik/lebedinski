@@ -18,12 +18,10 @@ type Order struct {
 type CdekOrderRequest struct {
 	Number     string      `json:"number"`
 	TariffCode int         `json:"tariff_code"`
-	Recipient  struct {
-		Name  string `json:"name"`
-		Phone string `json:"phone"`
-		Email string `json:"email,omitempty"`
-	} `json:"recipient"`
+	Recipient  CdekRecipient `json:"recipient"`
 	DeliveryPoint string      `json:"delivery_point"`
+	ShipmentPoint string      `json:"shipment_point,omitempty"`
+	FromLocation *CdekLocation `json:"from_location,omitempty"`
 	Packages      []CdekPackage `json:"packages"`
 }
 
@@ -47,4 +45,19 @@ type CdekPackageItem struct {
 
 type CdekPayment struct {
 	Value float64 `json:"value"`
+}
+
+type CdekRecipient struct {
+	Name   string      `json:"name"`
+	Phones []CdekPhone `json:"phones"`
+	Email  string      `json:"email,omitempty"`
+}
+
+type CdekPhone struct {
+	Number string `json:"number"`
+}
+
+type CdekLocation struct {
+	Code    int    `json:"code"`
+	Address string `json:"address"`
 }

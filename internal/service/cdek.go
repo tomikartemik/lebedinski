@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"strconv"
 )
 
 type CdekService struct {
@@ -106,19 +107,38 @@ func (s *CdekService) CreateCdekOrder(order model.Order) (string, error) {
 	}
 	fmt.Println("DEBUG: Using CDEK Token for CreateOrder:", token)
 
+	// Получаем данные отправителя из переменных окружения
+	shipmentPoint := os.Getenv("SHIPMENT_POINT")
+	cdekCodeStr := os.Getenv("CDEK_CODE")
+	cdekAddress := os.Getenv("CDEK_ADDRESS")
+
+	// Проверяем, что переменные установлены
+	if shipmentPoint == "" || cdekCodeStr == "" || cdekAddress == "" {
+		return "", errors.New("одна или несколько переменных окружения для отправителя (SHIPMENT_POINT, CDEK_CODE, CDEK_ADDRESS) не установлены")
+	}
+
+	// Преобразуем код города CDEK из строки в int
+	cdekCodeInt, err := strconv.Atoi(cdekCodeStr)
+	if err != nil {
+		return "", fmt.Errorf("не удалось преобразовать CDEK_CODE ('%s') в число: %w", cdekCodeStr, err)
+	}
+
 	cdekReq := model.CdekOrderRequest{
 		Number:     fmt.Sprint(order.CartID),
 		TariffCode: 136,
-		Recipient: struct {
-			Name  string `json:"name"`
-			Phone string `json:"phone"`
-			Email string `json:"email,omitempty"`
-		}{
-			Name:  order.FullName,
-			Phone: order.Phone,
+		Recipient: model.CdekRecipient{
+			Name: order.FullName,
+			Phones: []model.CdekPhone{
+				{Number: order.Phone},
+			},
 			Email: order.Email,
 		},
 		DeliveryPoint: order.PointCode,
+		ShipmentPoint: shipmentPoint,
+		FromLocation: &model.CdekLocation{
+			Code:    cdekCodeInt,
+			Address: cdekAddress,
+		},
 		Packages: []model.CdekPackage{
 			{
 				Number: fmt.Sprintf("%s-1", order.CartID),
