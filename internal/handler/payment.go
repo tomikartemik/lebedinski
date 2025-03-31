@@ -62,13 +62,14 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 		return
 	}
 
-	//log.Printf(
-	//	"Webhook received: Event=%s, ID=%s, Status=%s, Amount=%s",
-	//	notification.Event,
-	//	notification.Object.ID,
-	//	notification.Object.Status,
-	//	notification.Object.Amount.Value,
-	//)
+	log.Printf(
+		"Webhook received: Event=%s, ID=%s, Status=%s, Amount=%s",
+		notification.Event,
+		notification.Object.ID,
+		notification.Object.Status,
+		notification.Object.Amount.Value,
+		notification.Object.Description,
+	)
 
 	if notification.Object.Status != "succeeded" {
 		h.services.CreateCdekOrder(notification.Object.Description)
