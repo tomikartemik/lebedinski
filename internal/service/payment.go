@@ -14,22 +14,36 @@ import (
 )
 
 type PaymentService struct {
-	repo repository.Item
+	repoItem repository.Item
+	repoCart repository.Cart
 }
 
-func NewPaymentService(orderRepo repository.Item) *PaymentService {
-	return &PaymentService{repo: orderRepo}
+func NewPaymentService(orderRepo repository.Item, repoCart repository.Cart) *PaymentService {
+	return &PaymentService{repoItem: orderRepo, repoCart: repoCart}
 }
 
-func (s *PaymentService) CreatePayment(amount float64, description string) (*model.PaymentResponse, error) {
+func (s *PaymentService) CreatePayment(order model.Order) (*model.PaymentResponse, error) {
 	idempotenceKey := uuid.New().String()
+
+	cart, err := s.repoCart.GetCartByID(order.CartID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	amount := 500.0
+
+	for _, cartItem := range cart.Items {
+		item, _ := s.repoItem.GetItemByID(cartItem.ItemID)
+		amount = amount + float64(cartItem.Quantity*item.Price)
+	}
 
 	paymentRequest := model.PaymentRequest{
 		Amount: model.Amount{
 			Value:    formatAmount(amount),
 			Currency: "RUB",
 		},
-		Description: description,
+		Description: strconv.Itoa(order.CartID),
 		Capture:     true,
 		Confirmation: model.Confirmation{
 			Type:      "redirect",

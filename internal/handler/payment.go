@@ -3,28 +3,25 @@ package handler
 import (
 	"crypto/hmac"
 	"crypto/sha256"
-	"encoding/base64"
 	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"io"
+	"lebedinski/internal/model"
+	"lebedinski/internal/utils"
 	"log"
 	"net/http"
 	"os"
-	"strings"
 )
 
 func (h *Handler) CreatePayment(c *gin.Context) {
-	var request struct {
-		Amount      float64 `json:"amount" binding:"required,gt=0"`
-		Description string  `json:"description" binding:"required"`
-	}
+	var order model.Order
 
-	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := c.ShouldBindJSON(&order); err != nil {
+		utils.NewErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	paymentResponse, err := h.services.CreatePayment(request.Amount, request.Description)
+	paymentResponse, err := h.services.CreatePayment(order)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -38,31 +35,7 @@ func (h *Handler) CreatePayment(c *gin.Context) {
 }
 
 func (h *Handler) HandleWebhook(c *gin.Context) {
-	log.Printf("Request from IP: %s", c.Request.RemoteAddr)
-	log.Printf("Headers: %+v", c.Request.Header)
 
-	// Проверка заголовка
-	signatureHeader := c.GetHeader("Signature")
-	if signatureHeader == "" {
-		log.Println("Missing Signature header")
-		c.Status(http.StatusBadRequest)
-		return
-	}
-
-	// Парсинг заголовка
-	parts := strings.Split(signatureHeader, " ")
-	if len(parts) != 3 || parts[0] != "v1" {
-		log.Println("Invalid signature format")
-		c.Status(http.StatusBadRequest)
-		return
-	}
-	signature := parts[1] // Подпись
-	keyID := parts[2]     // Key ID
-
-	// Логируем keyID
-	log.Printf("Key ID: %s", keyID)
-
-	// Чтение тела
 	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		log.Println("Error reading body:", err)
@@ -70,26 +43,9 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 		return
 	}
 
-	// Декодирование подписи
-	decodedSignature, err := base64.StdEncoding.DecodeString(signature)
-	if err != nil {
-		log.Println("Base64 decode error:", err)
-		c.Status(http.StatusBadRequest)
-		return
-	}
-
-	// Проверка подписи
 	mac := hmac.New(sha256.New, []byte(os.Getenv("SECRET_KEY")))
 	mac.Write(body)
-	expectedSignature := mac.Sum(nil)
 
-	if !hmac.Equal(decodedSignature, expectedSignature) {
-		log.Println("Invalid signature")
-		c.Status(http.StatusForbidden)
-		return
-	}
-
-	// Парсинг тела
 	var notification struct {
 		Event  string `json:"event"`
 		Object struct {

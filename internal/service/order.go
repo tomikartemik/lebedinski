@@ -20,13 +20,16 @@ func NewOrderService(repoItem repository.Item, repoOrder repository.Order, repoS
 	}
 }
 
-func (s *OrderService) ProcessOrder(order model.Order, cdekUUID string) error {
-	order.CdekOrderUUID = cdekUUID
+func (s *OrderService) ProcessOrder(order model.Order, paymentID string) error {
+	order.PaymentID = paymentID
+	order.Status = "Paid"
+
 	cartItems, err := s.repoOrder.GetCartItemsByCartID(order.CartID)
 
 	if err != nil {
 		return fmt.Errorf("не удалось получить товары для CartID %d: %w", order.CartID, err)
 	}
+
 	if len(cartItems) == 0 {
 		return fmt.Errorf("корзина с ID %d пуста или не найдена", order.CartID)
 	}

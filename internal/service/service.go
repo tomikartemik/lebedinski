@@ -23,7 +23,7 @@ func NewService(repos *repository.Repository) *Service {
 		Photo:    NewPhotoService(repos),
 		Size:     NewSizeService(repos),
 		Category: NewCategoryService(repos),
-		Payment:  NewPaymentService(repos),
+		Payment:  NewPaymentService(repos.Item, repos.Cart),
 		Cart:     NewCartService(repos.Cart, repos.Item),
 		Cdek:     NewCdekService(repos.Item),
 		Order:    NewOrderService(repos.Item, repos.Order, repos.Size),
@@ -51,13 +51,13 @@ type Category interface {
 }
 
 type Order interface {
-	ProcessOrder(order model.Order, cdekUUID string) error
+	ProcessOrder(order model.Order, paymentID string) error
 	GetAllOrders() ([]model.Order, error)
 	GetOrderByCartID(id int) (model.Order, error)
 }
 
 type Payment interface {
-	CreatePayment(amount float64, description string) (*model.PaymentResponse, error)
+	CreatePayment(order model.Order) (*model.PaymentResponse, error)
 }
 
 type Cart interface {

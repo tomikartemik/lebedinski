@@ -9,6 +9,7 @@ type Order struct {
 	PointCode      string `gorm:"not null" json:"point_code"`
 	Promocode      string `json:"promocode"`
 	Status         string `gorm:"default:'created';not null"`
+	PaymentID      string `gorm:"not null" json:"payment_id"`
 	CdekOrderUUID  string `gorm:"unique"`
 }
 

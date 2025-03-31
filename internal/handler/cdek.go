@@ -15,16 +15,25 @@ func (h *Handler) CreateOrder(c *gin.Context) {
 		return
 	}
 
-	cdekUUID, err := h.services.CreateCdekOrder(order)
+	//cdekUUID, err := h.services.CreateCdekOrder(order)
+	//if err != nil {
+	//	utils.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
+	//	return
+	//}
+
+	paymentResponse, err := h.services.CreatePayment(order)
 	if err != nil {
-		utils.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	err = h.services.ProcessOrder(order, cdekUUID)
+	err = h.services.ProcessOrder(order, paymentResponse.ID)
+
 	if err != nil {
 		utils.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
 	}
 
-	c.JSON(http.StatusOK, model.SuccessResponse{Message: cdekUUID})
+	c.JSON(http.StatusCreated, gin.H{
+		"payment_url": paymentResponse.Confirmation.ConfirmationURL,
+	})
 }
