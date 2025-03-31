@@ -175,7 +175,12 @@ func (s *CdekService) CreateCdekOrder(cartIDStr string) (string, error) {
 	}
 
 	order.CdekOrderUUID = cdekResp.Entity.UUID
-	s.repoOrder.SaveOrder(order)
+
+	err = s.repoOrder.SaveOrder(order)
+
+	if err != nil {
+		return "", err
+	}
 
 	return cdekResp.Entity.UUID, nil
 }
