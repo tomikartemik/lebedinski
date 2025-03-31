@@ -38,10 +38,15 @@ func (s *CdekService) GetToken() (string, error) {
 		return "", err
 	}
 
+	// Логируем тело ответа перед разбором JSON
+	fmt.Println("DEBUG: CDEK Token Response Body:", resp.String())
+
 	var tokenResp struct {
 		AccessToken string `json:"access_token"`
 	}
 	if err := json.Unmarshal(resp.Body(), &tokenResp); err != nil {
+		// Логируем ошибку разбора JSON
+		fmt.Println("ERROR: Failed to unmarshal CDEK token response:", err, "Body:", resp.String())
 		return "", err
 	}
 
