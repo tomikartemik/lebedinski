@@ -109,39 +109,44 @@ func (s *CdekService) CreateCdekOrder(order model.Order) (string, error) {
 
 	// Получаем данные отправителя из переменных окружения
 	shipmentPoint := os.Getenv("SHIPMENT_POINT")
-	cdekCodeStr := os.Getenv("CDEK_CODE")
-	cdekAddress := os.Getenv("CDEK_ADDRESS")
+	// Убираем чтение CDEK_CODE и CDEK_ADDRESS, т.к. нужно либо ShipmentPoint, либо FromLocation
+	// cdekCodeStr := os.Getenv("CDEK_CODE")
+	// cdekAddress := os.Getenv("CDEK_ADDRESS")
 
-	// Проверяем, что переменные установлены
-	if shipmentPoint == "" || cdekCodeStr == "" || cdekAddress == "" {
-		return "", errors.New("одна или несколько переменных окружения для отправителя (SHIPMENT_POINT, CDEK_CODE, CDEK_ADDRESS) не установлены")
+	// Проверяем, что переменная SHIPMENT_POINT установлена
+	if shipmentPoint == "" {
+		return "", errors.New("переменная окружения для пункта отправки (SHIPMENT_POINT) не установлена")
 	}
 
-	// Преобразуем код города CDEK из строки в int
-	cdekCodeInt, err := strconv.Atoi(cdekCodeStr)
-	if err != nil {
-		return "", fmt.Errorf("не удалось преобразовать CDEK_CODE ('%s') в число: %w", cdekCodeStr, err)
-	}
+	// Убираем преобразование CDEK_CODE
+	/*
+	   cdekCodeInt, err := strconv.Atoi(cdekCodeStr)
+	   if err != nil {
+	       return "", fmt.Errorf("не удалось преобразовать CDEK_CODE ('%s') в число: %w", cdekCodeStr, err)
+	   }
+	*/
 
 	cdekReq := model.CdekOrderRequest{
 		Number:     fmt.Sprint(order.CartID),
-		TariffCode: 136,
+		TariffCode: 136, // ВАЖНО: Проверь и замени тариф (напр. 137 для ПВЗ)!
 		Recipient: model.CdekRecipient{
 			Name: order.FullName,
 			Phones: []model.CdekPhone{
 				{Number: order.Phone},
 			},
-			Email: order.Email,
+			Email: order.Email, // Будет опущено, если пустое, т.к. omitempty
 		},
-		DeliveryPoint: order.PointCode,
-		ShipmentPoint: shipmentPoint,
-		FromLocation: &model.CdekLocation{
-			Code:    cdekCodeInt,
-			Address: cdekAddress,
-		},
+		DeliveryPoint: order.PointCode, // Код ПВЗ назначения
+		ShipmentPoint: shipmentPoint,    // Оставляем ТОЛЬКО код пункта отправки из env
+		// Убираем FromLocation, т.к. нельзя указывать одновременно с ShipmentPoint
+		// FromLocation: &model.CdekLocation{
+		// 	Code:    cdekCodeInt,
+		// 	Address: cdekAddress,
+		// },
+		// ЗАПОЛНЯЕМ ПЛЕЙСХОЛДЕРАМИ! Замени Packages на реальные данные из order!
 		Packages: []model.CdekPackage{
 			{
-				Number: fmt.Sprintf("%s-1", order.CartID),
+				Number: fmt.Sprintf("%s-1", order.CartID), // Номер места
 				Weight: 1000,
 				Length: 10,
 				Width:  10,
