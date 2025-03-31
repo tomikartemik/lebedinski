@@ -60,6 +60,7 @@ type Payment interface {
 
 type Cart interface {
 	CreateValidCart(items []model.CartItem) (int, error)
+	GetCartByID(id int) (model.Cart, error)
 }
 
 type Cdek interface {

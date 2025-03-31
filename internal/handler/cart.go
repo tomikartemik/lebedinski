@@ -26,3 +26,18 @@ func (h *Handler) CreateCart(c *gin.Context) {
 
 	c.JSON(http.StatusOK, model.SuccessResponse{Message: strconv.Itoa(cartID)})
 }
+
+func (h *Handler) GetCartById(c *gin.Context) {
+	id, err := strconv.Atoi(c.Query("id"))
+
+	if err != nil {
+		utils.NewErrorResponse(c, http.StatusBadRequest, err.Error())
+	}
+
+	cart, err := h.services.GetCartByID(id)
+	if err != nil {
+		utils.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
+	}
+
+	c.JSON(http.StatusOK, cart)
+}

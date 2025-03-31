@@ -72,6 +72,7 @@ func (h *Handler) InitRoutes() *gin.Engine {
 	cart := router.Group("cart")
 	{
 		cart.POST("/create", h.CreateCart)
+		cart.GET("", h.GetCartById)
 	}
 
 	order := router.Group("order")
