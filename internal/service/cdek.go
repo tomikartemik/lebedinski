@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"strconv"
 )
 
 type CdekService struct {
@@ -137,7 +136,7 @@ func (s *CdekService) CreateCdekOrder(order model.Order) (string, error) {
 			Email: order.Email, // Будет опущено, если пустое, т.к. omitempty
 		},
 		DeliveryPoint: order.PointCode, // Код ПВЗ назначения
-		ShipmentPoint: shipmentPoint,    // Оставляем ТОЛЬКО код пункта отправки из env
+		ShipmentPoint: shipmentPoint,   // Оставляем ТОЛЬКО код пункта отправки из env
 		// Убираем FromLocation, т.к. нельзя указывать одновременно с ShipmentPoint
 		// FromLocation: &model.CdekLocation{
 		// 	Code:    cdekCodeInt,
