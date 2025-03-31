@@ -176,7 +176,7 @@ func (s *CdekService) CreateCdekOrder(cartIDStr string) (string, error) {
 
 	order.CdekOrderUUID = cdekResp.Entity.UUID
 
-	err = s.repoOrder.SaveOrder(order)
+	err = s.repoOrder.UpdateOrder(order)
 
 	if err != nil {
 		return "", err
