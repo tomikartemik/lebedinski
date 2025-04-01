@@ -11,26 +11,7 @@ import (
 	"os"
 )
 
-//func (h *Handler) CreatePayment(c *gin.Context) {
-//	var order model.Order
-//
-//	if err := c.ShouldBindJSON(&order); err != nil {
-//		utils.NewErrorResponse(c, http.StatusBadRequest, err.Error())
-//		return
-//	}
-//
-//	paymentResponse, err := h.services.CreatePayment(order)
-//	if err != nil {
-//		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-//		return
-//	}
-//
-//	c.JSON(http.StatusCreated, gin.H{
-//		"payment_id":  paymentResponse.ID,
-//		"payment_url": paymentResponse.Confirmation.ConfirmationURL,
-//	})
-//
-//}
+
 
 func (h *Handler) HandleWebhook(c *gin.Context) {
 
