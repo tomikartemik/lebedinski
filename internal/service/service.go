@@ -44,11 +44,14 @@ type Photo interface {
 type Size interface {
 	AddNewSizes(sizes []model.Size) error
 	UpdateSize(size model.Size) error
+	DeleteSize(sizeIDStr string) error
 }
 
 type Category interface {
 	AddCategory(category model.Category) error
 	GetAllCategories() ([]model.Category, error)
+	UpdateCategory(category model.Category) error
+	DeleteCategory(categoryID string) error
 }
 
 type Order interface {

@@ -40,11 +40,14 @@ type Size interface {
 	AddNewSizes(sizes []model.Size) error
 	DecreaseStock(itemID int, size string, quantity int) error
 	UpdateSize(size model.Size) error
+	DeleteSize(sizeID int) error
 }
 
 type Category interface {
 	AddCategory(category model.Category) error
 	GetAllCategories() ([]model.Category, error)
+	UpdateCategory(category model.Category) error
+	DeleteCategory(categoryID int) error
 }
 
 type Cart interface {

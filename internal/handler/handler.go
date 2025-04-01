@@ -56,12 +56,15 @@ func (h *Handler) InitRoutes() *gin.Engine {
 	{
 		size.POST("/add", h.AddNewSizes)
 		size.PUT("/", h.UpdateSize)
+		size.DELETE("/", h.DeleteSize)
 	}
 
 	category := router.Group("category")
 	{
 		category.GET("/all", h.GetAllCategorise)
 		category.POST("/new", h.AddNewCategory)
+		category.PUT("/", h.UpdateCategory)
+		category.DELETE("/", h.DeleteCategory)
 	}
 
 	payment := router.Group("payment")

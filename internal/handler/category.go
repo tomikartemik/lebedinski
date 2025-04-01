@@ -30,3 +30,31 @@ func (h *Handler) GetAllCategorise(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, categories)
 }
+
+func (h *Handler) UpdateCategory(c *gin.Context) {
+	var category model.Category
+
+	if err := c.ShouldBindJSON(&category); err != nil {
+		utils.NewErrorResponse(c, http.StatusBadRequest, err.Error())
+	}
+
+	err := h.services.UpdateCategory(category)
+
+	if err != nil {
+		utils.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
+	}
+
+	c.JSON(http.StatusOK, "Category successfully updated")
+}
+
+func (h *Handler) DeleteCategory(c *gin.Context) {
+	id := c.Query("id")
+
+	err := h.services.DeleteCategory(id)
+
+	if err != nil {
+		utils.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
+	}
+
+	c.JSON(http.StatusOK, "Category successfully deleted")
+}

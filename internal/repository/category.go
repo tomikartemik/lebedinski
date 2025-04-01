@@ -22,3 +22,11 @@ func (r *CategoryRepository) GetAllCategories() ([]model.Category, error) {
 	err := r.db.Find(&categories).Error
 	return categories, err
 }
+
+func (r *CategoryRepository) UpdateCategory(category model.Category) error {
+	return r.db.Where("id = ?", category.ID).Updates(&category).Error
+}
+
+func (r *CategoryRepository) DeleteCategory(categoryID int) error {
+	return r.db.Where("id = ?", categoryID).Delete(&model.Category{}).Error
+}

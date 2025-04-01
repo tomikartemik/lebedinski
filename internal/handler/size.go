@@ -38,3 +38,14 @@ func (h *Handler) UpdateSize(c *gin.Context) {
 
 	c.JSON(http.StatusOK, "Size successfully updated")
 }
+
+func (h *Handler) DeleteSize(c *gin.Context) {
+	id := c.Query("id")
+	err := h.services.DeleteSize(id)
+
+	if err != nil {
+		utils.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
+	}
+
+	c.JSON(http.StatusOK, "Size successfully deleted")
+}
