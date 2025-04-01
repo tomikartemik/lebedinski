@@ -28,13 +28,8 @@ func (h *Handler) InitRoutes() *gin.Engine {
 		AllowCredentials: true,
 	}))
 
-	//UPLOADS
-	////////////////////////////////////////////////////////////
 	router.Static("/uploads", "./uploads")
-	////////////////////////////////////////////////////////////
 
-	//ITEM
-	////////////////////////////////////////////////////////////
 	item := router.Group("/item")
 	{
 		item.POST("/new", h.CreateItem)
@@ -42,15 +37,11 @@ func (h *Handler) InitRoutes() *gin.Engine {
 		item.GET("", h.ItemByID)
 		item.PUT("", h.UpdateItem)
 	}
-	////////////////////////////////////////////////////////////
 
-	//ITEM
-	////////////////////////////////////////////////////////////
 	photo := router.Group("/photo")
 	{
 		photo.POST("/new", h.UploadPhoto)
 	}
-	////////////////////////////////////////////////////////////
 
 	size := router.Group("size")
 	{
@@ -69,7 +60,6 @@ func (h *Handler) InitRoutes() *gin.Engine {
 
 	payment := router.Group("payment")
 	{
-		//payment.POST("/new", h.CreatePayment)
 		payment.POST("/response", h.HandleWebhook)
 	}
 
