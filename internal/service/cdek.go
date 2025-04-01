@@ -186,7 +186,6 @@ func (s *CdekService) CreateCdekOrder(cartIDStr string) (string, error) {
 	return cdekResp.Entity.UUID, nil
 }
 
-// getCityCode находит код города СДЭК по названию и коду страны
 func (s *CdekService) getCityCode(cityName string, countryCode string) (int, error) {
 	token, err := s.GetToken()
 	if err != nil {
@@ -197,11 +196,11 @@ func (s *CdekService) getCityCode(cityName string, countryCode string) (int, err
 	resp, err := client.R().
 		SetHeader("Authorization", "Bearer "+token).
 		SetQueryParams(map[string]string{
-			"country_codes": countryCode, // Используем код страны (например, RU)
-			"city":          cityName,    // Ищем по текстовому названию
-			"size":          "1",         // Ограничиваем до одного результата
+			"country_codes": countryCode,
+			"city":          cityName,
+			"size":          "1",
 		}).
-		Get("https://api.cdek.ru/v2/location/cities") // Эндпоинт для поиска городов
+		Get("https://api.cdek.ru/v2/location/cities")
 
 	if err != nil {
 		return 0, fmt.Errorf("failed to query CDEK cities API: %w", err)
@@ -211,7 +210,7 @@ func (s *CdekService) getCityCode(cityName string, countryCode string) (int, err
 		return 0, fmt.Errorf("CDEK cities API error: Status %s, Body: %s", resp.Status(), resp.String())
 	}
 
-	var cities []model.CityInfo // Ожидаем массив городов в ответе
+	var cities []model.CityInfo
 	if err := json.Unmarshal(resp.Body(), &cities); err != nil {
 		return 0, fmt.Errorf("failed to unmarshal cities response: %w. Body: %s", err, resp.String())
 	}
@@ -224,43 +223,37 @@ func (s *CdekService) getCityCode(cityName string, countryCode string) (int, err
 	return cities[0].Code, nil
 }
 
-// GetPvzList получает список ПВЗ от API СДЭК, используя текстовые названия города/страны
 func (s *CdekService) GetPvzList(params map[string]string) ([]model.Pvz, error) {
 	cityName := params["city"]
-	countryCode := params["country_codes"] // Ожидаем код страны типа "RU"
+	countryCode := params["country_codes"]
 
 	if cityName == "" || countryCode == "" {
 		return nil, errors.New("city name and country code are required in service params")
 	}
 
-	// 1. Получаем числовой код города
 	cityCode, err := s.getCityCode(cityName, countryCode)
 	if err != nil {
 		// Возвращаем ошибку, чтобы handler мог ее обработать
 		return nil, err // Ошибка уже содержит детали (город не найден или API недоступен)
 	}
 
-	// 2. Получаем токен для основного запроса
 	token, err := s.GetToken()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get CDEK token for PVZ list: %w", err)
 	}
 
-	// 3. Формируем параметры для запроса ПВЗ с использованием city_code
 	pvzParams := map[string]string{
-		"city_code": strconv.Itoa(cityCode), // Используем полученный числовой код
-		"type":      "PVZ",                   // Фильтр по типу ПВЗ
-		// "country_codes": countryCode, // Можно добавить, если API /deliverypoints это требует/уточняет поиск
+		"city_code": strconv.Itoa(cityCode),
+		"type":      "PVZ",
 	}
 
 	log.Printf("Запрос списка ПВЗ с параметрами для API СДЭК: %+v", pvzParams)
 
-	// 4. Выполняем запрос к /deliverypoints
 	client := resty.New()
 	request := client.R().
-		SetHeader("Authorization", "Bearer "+token). 
+		SetHeader("Authorization", "Bearer "+token).
 		SetHeader("Content-Type", "application/json").
-		SetQueryParams(pvzParams) // Используем параметры с city_code
+		SetQueryParams(pvzParams)
 
 	resp, err := request.Get("https://api.cdek.ru/v2/deliverypoints")
 
@@ -272,7 +265,6 @@ func (s *CdekService) GetPvzList(params map[string]string) ([]model.Pvz, error) 
 		return nil, fmt.Errorf("CDEK deliverypoints API error: Status %s, Body: %s", resp.Status(), resp.String())
 	}
 
-	// 5. Разбираем ответ
 	var pvzList []model.Pvz
 	if err := json.Unmarshal(resp.Body(), &pvzList); err != nil {
 		log.Printf("Ошибка разбора JSON ответа ПВЗ: %v. Тело ответа: %s", err, resp.String())
