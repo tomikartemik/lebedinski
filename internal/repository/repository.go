@@ -51,7 +51,7 @@ type Category interface {
 }
 
 type Cart interface {
-	CreateCart(cart model.Cart) error
+	CreateCart(cart *model.Cart) error
 	GetCartByID(cartID int) (model.Cart, error)
 }
 

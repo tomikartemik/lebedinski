@@ -38,7 +38,7 @@ func (s *CartService) CreateValidCart(items []model.CartItem) (int, error) {
 	}
 
 	cart := model.Cart{Items: items}
-	if err := s.cartRepo.CreateCart(cart); err != nil {
+	if err := s.cartRepo.CreateCart(&cart); err != nil {
 		return 0, err
 	}
 

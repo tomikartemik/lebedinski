@@ -13,7 +13,7 @@ func NewCartRepository(db *gorm.DB) *CartRepository {
 	return &CartRepository{db: db}
 }
 
-func (r *CartRepository) CreateCart(cart model.Cart) error {
+func (r *CartRepository) CreateCart(cart *model.Cart) error {
 	return r.db.Create(cart).Error
 }
 
