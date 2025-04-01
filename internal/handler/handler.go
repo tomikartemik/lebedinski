@@ -97,7 +97,6 @@ func (h *Handler) InitRoutes() *gin.Engine {
 	return router
 }
 
-// GetPvzList обрабатывает запрос на получение списка ПВЗ СДЭК
 func (h *Handler) GetPvzList(c *gin.Context) {
 	countryName := c.Query("country") // Например: Россия
 	cityName := c.Query("city")       // Например: Москва

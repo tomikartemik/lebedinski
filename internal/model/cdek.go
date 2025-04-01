@@ -2,36 +2,37 @@ package model
 
 // Pvz представляет пункт выдачи заказов СДЭК
 type Pvz struct {
-	Code        string   `json:"code"`         // Код ПВЗ
-	Name        string   `json:"name"`         // Наименование ПВЗ
-	Address     string   `json:"address_full"` // Полный адрес (Уточнить поле в API)
-	WorkTime    string   `json:"work_time"`    // Время работы
-	Phones      []Phone  `json:"phones"`       // Телефоны
-	Note        string   `json:"note"`         // Примечание
-        Latitude    float64  `json:"latitude"`   // Широта (Уточнить поле в API)
-        Longitude   float64  `json:"longitude"`  // Долгота (Уточнить поле в API)
-	Type        string   `json:"type"`         // Тип ПВЗ (PVZ, POSTAMAT)
-	// Добавьте другие поля при необходимости, сверившись с документацией API СДЭК
-        // Возможно, поля address_full, latitude, longitude находятся внутри вложенного объекта location
-        // Необходимо проверить актуальную документацию API СДЭК v2 /deliverypoints
+	Code     string   `json:"code"`     // Код ПВЗ
+	Name     string   `json:"name"`     // Наименование ПВЗ
+	Location Location `json:"location"` // Используем вложенную структуру Location
+	WorkTime string   `json:"work_time"` // Время работы
+	Phones   []Phone  `json:"phones"`   // Телефоны
+	Note     string   `json:"note"`     // Примечание
+	Type     string   `json:"type"`     // Тип ПВЗ (PVZ, POSTAMAT)
+	// Убрали Latitude, Longitude, Address с верхнего уровня
+	// Добавьте другие НЕ-location поля при необходимости
+}
+
+// Location содержит данные о местоположении ПВЗ
+// Уточните поля по актуальной документации API СДЭК /deliverypoints!
+type Location struct {
+	CountryCode string  `json:"country_code"`
+	RegionCode  int     `json:"region_code"`
+	Region      string  `json:"region"`
+	CityCode    int     `json:"city_code"`
+	City        string  `json:"city"`
+	FiasGUID    string  `json:"fias_guid,omitempty"` // Может отсутствовать
+	PostalCode  string  `json:"postal_code"`
+	Longitude   float64 `json:"longitude"` // Долгота
+	Latitude    float64 `json:"latitude"`  // Широта
+	Address     string  `json:"address"`      // Адрес внутри location
+	AddressFull string  `json:"address_full"` // Полный адрес внутри location
 }
 
 // Phone представляет номер телефона ПВЗ
 type Phone struct {
 	Number string `json:"number"`
 }
-
-// Location может потребоваться, если координаты или адрес вложены
-// type Location struct {
-// 	AddressFull string  `json:"address_full"`
-// 	Latitude    float64 `json:"latitude"`
-// 	Longitude   float64 `json:"longitude"`
-// }
-
-// Структура ответа API СДЭК для списка ПВЗ (может потребоваться адаптация)
-// Обычно API возвращает массив объектов Pvz напрямую.
-// Если API возвращает объект с полем, содержащим массив,
-// нужно будет создать соответствующую структуру ответа. 
 
 // CityInfo представляет информацию о городе из API /location/cities СДЭК
 // Уточните поля по актуальной документации!

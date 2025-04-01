@@ -279,10 +279,5 @@ func (s *CdekService) GetPvzList(params map[string]string) ([]model.Pvz, error) 
 		return nil, fmt.Errorf("failed to unmarshal PVZ list response: %w", err)
 	}
 
-	// Дополнительная обработка данных при необходимости (например, коррекция структуры адреса)
-	// for i := range pvzList {
-	// 	// pvzList[i].Address = pvzList[i].Location.AddressFull // Пример
-	// }
-
 	return pvzList, nil
 }
