@@ -22,3 +22,19 @@ func (h *Handler) AddNewSizes(c *gin.Context) {
 
 	c.JSON(http.StatusOK, "Size successfully added")
 }
+
+func (h *Handler) UpdateSize(c *gin.Context) {
+	var size model.Size
+
+	if err := c.ShouldBindJSON(&size); err != nil {
+		utils.NewErrorResponse(c, http.StatusBadRequest, err.Error())
+	}
+
+	err := h.services.UpdateSize(size)
+
+	if err != nil {
+		utils.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
+	}
+
+	c.JSON(http.StatusOK, "Size successfully updated")
+}

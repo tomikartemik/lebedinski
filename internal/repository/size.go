@@ -44,3 +44,7 @@ func (r *SizeRepository) DecreaseStock(itemID int, size string, quantity int) er
 
 	return nil
 }
+
+func (r *SizeRepository) UpdateSize(size model.Size) error {
+	return r.db.Where("id = ?", size.ID).Updates(&size).Error
+}

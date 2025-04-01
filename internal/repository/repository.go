@@ -39,6 +39,7 @@ type Photo interface {
 type Size interface {
 	AddNewSizes(sizes []model.Size) error
 	DecreaseStock(itemID int, size string, quantity int) error
+	UpdateSize(size model.Size) error
 }
 
 type Category interface {

@@ -38,5 +38,5 @@ func (r *ItemRepository) GetItemByID(id int) (model.Item, error) {
 }
 
 func (r *ItemRepository) UpdateItem(item model.Item) error {
-	return r.db.Save(&item).Error
+	return r.db.Where("id = ?", item.ID).Updates(&item).Error
 }

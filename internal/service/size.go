@@ -16,3 +16,7 @@ func NewSizeService(repo repository.Size) *SizeService {
 func (s *SizeService) AddNewSizes(sizes []model.Size) error {
 	return s.repo.AddNewSizes(sizes)
 }
+
+func (s *SizeService) UpdateSize(size model.Size) error {
+	return s.repo.UpdateSize(size)
+}
