@@ -40,16 +40,18 @@ func (h *Handler) CreateOrder(c *gin.Context) {
 	})
 }
 
+// GetPvzList обрабатывает запрос на получение списка ПВЗ СДЭК по региону
 func (h *Handler) GetPvzList(c *gin.Context) {
-	countryName := c.Query("country")
-	cityName := c.Query("city")
+	countryName := c.Query("country") // Например: Россия
+	regionName := c.Query("region")   // Например: Московская область
 
-	if countryName == "" || cityName == "" {
-		log.Println("Ошибка: не указаны обязательные параметры 'country' и 'city'")
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Query parameters 'country' and 'city' are required"})
+	if countryName == "" || regionName == "" {
+		log.Println("Ошибка: не указаны обязательные параметры 'country' и 'region'")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Query parameters 'country' and 'region' are required"})
 		return
 	}
 
+	// Преобразуем название страны в код
 	countryCode := ""
 	switch strings.ToLower(countryName) {
 	case "россия":
@@ -68,24 +70,27 @@ func (h *Handler) GetPvzList(c *gin.Context) {
 		}
 	}
 
+	// Собираем параметры для *сервиса*
 	params := map[string]string{
-		"country_codes": countryCode,
-		"city":          cityName,
+		"country_codes": countryCode, // Передаем код страны
+		"region":        regionName,  // Передаем название региона
 	}
 
-	log.Printf("Запрос списка ПВЗ СДЭК от фронтенда: страна=%s, город=%s -> параметры для сервиса: %+v", countryName, cityName, params)
+	log.Printf("Запрос списка ПВЗ СДЭК от фронтенда: страна=%s, регион=%s -> параметры для сервиса: %+v", countryName, regionName, params)
 
-	pvzList, err := h.services.Cdek.GetPvzList(params)
+	// Вызываем сервис для получения списка ПВЗ
+	pvzList, err := h.services.Cdek.GetPvzList(params) // Сервис теперь сам найдет код региона
 	if err != nil {
 		log.Printf("Ошибка получения списка ПВЗ из сервиса: %v", err)
-		if strings.Contains(err.Error(), "city not found") {
-			c.JSON(http.StatusNotFound, gin.H{"error": "City not found in CDEK database", "city": cityName, "country": countryCode})
+		// Проверяем, не связана ли ошибка с тем, что регион не найден
+		if strings.Contains(err.Error(), "region not found") {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Region not found in CDEK database", "region": regionName, "country": countryCode})
 		} else {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get PVZ list", "details": err.Error()})
 		}
 		return
 	}
 
-	log.Printf("Получено %d ПВЗ для города %s, страна %s", len(pvzList), cityName, countryName)
+	log.Printf("Получено %d ПВЗ для региона %s, страна %s", len(pvzList), regionName, countryName)
 	c.JSON(http.StatusOK, pvzList)
 }
