@@ -223,7 +223,6 @@ func (s *CdekService) getCityCode(cityName string, countryCode string) (int, err
 	return cities[0].Code, nil
 }
 
-// getRegionCode находит код региона СДЭК по названию и коду страны
 func (s *CdekService) getRegionCode(regionName string, countryCode string) (int, error) {
 	token, err := s.GetToken()
 	if err != nil {
@@ -231,33 +230,43 @@ func (s *CdekService) getRegionCode(regionName string, countryCode string) (int,
 	}
 
 	client := resty.New()
+	queryParams := map[string]string{
+		"country_codes": countryCode,
+		"region":        regionName,
+		"size":          "5",
+	}
+	log.Printf("Запрос кода региона к API СДЭК /v2/location/regions с параметрами: %+v", queryParams)
+
 	resp, err := client.R().
 		SetHeader("Authorization", "Bearer "+token).
-		SetQueryParams(map[string]string{
-			"country_codes": countryCode,
-			"region":        regionName,
-			"size":          "1",
-		}).
+		SetQueryParams(queryParams).
 		Get("https://api.cdek.ru/v2/location/regions")
 
 	if err != nil {
 		return 0, fmt.Errorf("failed to query CDEK regions API: %w", err)
 	}
 
+	bodyBytes := resp.Body()
+	log.Printf("Ответ от API СДЭК /v2/location/regions (статус %d): %s", resp.StatusCode(), string(bodyBytes))
+
 	if resp.StatusCode() != http.StatusOK {
-		return 0, fmt.Errorf("CDEK regions API error: Status %s, Body: %s", resp.Status(), resp.String())
+		return 0, fmt.Errorf("CDEK regions API error: Status %d", resp.StatusCode())
 	}
 
 	var regions []model.RegionInfo
-	if err := json.Unmarshal(resp.Body(), &regions); err != nil {
-		return 0, fmt.Errorf("failed to unmarshal regions response: %w. Body: %s", err, resp.String())
+	if err := json.Unmarshal(bodyBytes, &regions); err != nil {
+		return 0, fmt.Errorf("failed to unmarshal regions response: %w", err)
 	}
 
 	if len(regions) == 0 {
 		return 0, fmt.Errorf("region not found in CDEK database: %s, country: %s", regionName, countryCode)
 	}
 
-	log.Printf("Найден код региона СДЭК: %d для %s (%s)", regions[0].RegionCode, regionName, countryCode)
+	for i, reg := range regions {
+		log.Printf("Найденный регион [%d]: Код=%d, Название=%s, Страна=%s", i, reg.RegionCode, reg.Region, reg.CountryCode)
+	}
+
+	log.Printf("Используем код региона СДЭК: %d для %s (%s)", regions[0].RegionCode, regionName, countryCode)
 	return regions[0].RegionCode, nil
 }
 
