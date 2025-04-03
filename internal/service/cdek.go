@@ -223,18 +223,55 @@ func (s *CdekService) getCityCode(cityName string, countryCode string) (int, err
 	return cities[0].Code, nil
 }
 
-func (s *CdekService) GetPvzList(params map[string]string) ([]model.Pvz, error) {
-	cityName := params["city"]
-	countryCode := params["country_codes"]
-
-	if cityName == "" || countryCode == "" {
-		return nil, errors.New("city name and country code are required in service params")
+// getRegionCode находит код региона СДЭК по названию и коду страны
+func (s *CdekService) getRegionCode(regionName string, countryCode string) (int, error) {
+	token, err := s.GetToken()
+	if err != nil {
+		return 0, fmt.Errorf("failed to get CDEK token for region lookup: %w", err)
 	}
 
-	cityCode, err := s.getCityCode(cityName, countryCode)
+	client := resty.New()
+	resp, err := client.R().
+		SetHeader("Authorization", "Bearer "+token).
+		SetQueryParams(map[string]string{
+			"country_codes": countryCode,
+			"region":        regionName,
+			"size":          "1",
+		}).
+		Get("https://api.cdek.ru/v2/location/regions")
+
 	if err != nil {
-		// Возвращаем ошибку, чтобы handler мог ее обработать
-		return nil, err // Ошибка уже содержит детали (город не найден или API недоступен)
+		return 0, fmt.Errorf("failed to query CDEK regions API: %w", err)
+	}
+
+	if resp.StatusCode() != http.StatusOK {
+		return 0, fmt.Errorf("CDEK regions API error: Status %s, Body: %s", resp.Status(), resp.String())
+	}
+
+	var regions []model.RegionInfo
+	if err := json.Unmarshal(resp.Body(), &regions); err != nil {
+		return 0, fmt.Errorf("failed to unmarshal regions response: %w. Body: %s", err, resp.String())
+	}
+
+	if len(regions) == 0 {
+		return 0, fmt.Errorf("region not found in CDEK database: %s, country: %s", regionName, countryCode)
+	}
+
+	log.Printf("Найден код региона СДЭК: %d для %s (%s)", regions[0].RegionCode, regionName, countryCode)
+	return regions[0].RegionCode, nil
+}
+
+func (s *CdekService) GetPvzList(params map[string]string) ([]model.Pvz, error) {
+	regionName := params["region"]
+	countryCode := params["country_codes"]
+
+	if regionName == "" || countryCode == "" {
+		return nil, errors.New("region name and country code are required in service params")
+	}
+
+	regionCode, err := s.getRegionCode(regionName, countryCode)
+	if err != nil {
+		return nil, err
 	}
 
 	token, err := s.GetToken()
@@ -243,8 +280,8 @@ func (s *CdekService) GetPvzList(params map[string]string) ([]model.Pvz, error) 
 	}
 
 	pvzParams := map[string]string{
-		"city_code": strconv.Itoa(cityCode),
-		"type":      "PVZ",
+		"region_code": strconv.Itoa(regionCode),
+		"type":        "PVZ",
 	}
 
 	log.Printf("Запрос списка ПВЗ с параметрами для API СДЭК: %+v", pvzParams)

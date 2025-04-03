@@ -29,3 +29,10 @@ type CityInfo struct {
 	Latitude    float64 `json:"latitude"`
 	Longitude   float64 `json:"longitude"`
 }
+
+type RegionInfo struct {
+	RegionCode  int    `json:"region_code"`
+	Region      string `json:"region"`
+	CountryCode string `json:"country_code"`
+	Country     string `json:"country"`
+}
