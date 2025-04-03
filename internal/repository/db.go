@@ -22,13 +22,13 @@ func ConnectDB() (*gorm.DB, error) {
 	}
 
 	err = db.AutoMigrate(
+		model.Category{},
 		model.Item{},
 		model.Photo{},
 		model.Size{},
-		model.Category{},
+		model.Cart{}, // This should come before CartItem
 		model.Order{},
-		model.Cart{},
-		model.CartItem{},
+		model.CartItem{}, // This references Cart, so it comes after
 	)
 
 	if err != nil {
