@@ -259,15 +259,31 @@ func (s *CdekService) getRegionCode(regionName string, countryCode string) (int,
 	}
 
 	if len(regions) == 0 {
-		return 0, fmt.Errorf("region not found in CDEK database: %s, country: %s", regionName, countryCode)
+		return 0, fmt.Errorf("region not found in CDEK database (empty list returned): %s, country: %s", regionName, countryCode)
 	}
 
+	found := false
+	var foundCode int
+	targetRegionLower := strings.ToLower(regionName)
+
+	log.Printf("Ищем регион '%s' в ответе API:", targetRegionLower)
 	for i, reg := range regions {
-		log.Printf("Найденный регион [%d]: Код=%d, Название=%s, Страна=%s", i, reg.RegionCode, reg.Region, reg.CountryCode)
+		log.Printf("  Проверяем [%d]: Код=%d, Название='%s', Страна=%s", i, reg.RegionCode, reg.Region, reg.CountryCode)
+		if strings.ToLower(reg.Region) == targetRegionLower {
+			log.Printf("    Найдено точное совпадение! Используем код: %d", reg.RegionCode)
+			foundCode = reg.RegionCode
+			found = true
+			break
+		}
 	}
 
-	log.Printf("Используем код региона СДЭК: %d для %s (%s)", regions[0].RegionCode, regionName, countryCode)
-	return regions[0].RegionCode, nil
+	if !found {
+		log.Printf("Точное совпадение для региона '%s' не найдено в ответе API.", regionName)
+		return 0, fmt.Errorf("region not found in CDEK database (no exact match): %s, country: %s", regionName, countryCode)
+	}
+
+	log.Printf("Используем найденный код региона СДЭК: %d для %s (%s)", foundCode, regionName, countryCode)
+	return foundCode, nil
 }
 
 func (s *CdekService) GetPvzList(params map[string]string) ([]model.Pvz, error) {
