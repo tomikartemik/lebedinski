@@ -27,8 +27,8 @@ func ConnectDB() (*gorm.DB, error) {
 		model.Size{},
 		model.Category{},
 		model.Order{},
-		model.CartItem{},
 		model.Cart{},
+		model.CartItem{},
 	)
 
 	if err != nil {
