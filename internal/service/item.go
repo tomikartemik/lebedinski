@@ -16,6 +16,7 @@ func NewItemService(repo repository.Item) *ItemService {
 }
 
 func (s *ItemService) CreateItem(item model.Item) (int, error) {
+	item.Discount = (1 - int(item.ActualPrice/item.Price)) * 100
 	return s.repo.CreateItem(item)
 }
 
