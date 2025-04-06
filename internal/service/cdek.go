@@ -38,6 +38,7 @@ func (s *CdekService) GetToken() (string, error) {
 
 	client := resty.New()
 	resp, err := client.R().
+		SetHeader("Content-Type", "application/x-www-form-urlencoded").
 		SetFormData(map[string]string{
 			"grant_type":    "client_credentials",
 			"client_id":     account,
@@ -48,6 +49,8 @@ func (s *CdekService) GetToken() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to request CDEK token: %w", err)
 	}
+
+	log.Printf("Ответ от API СДЭК /v2/oauth/token (статус %d): %s", resp.StatusCode(), resp.String())
 
 	if resp.StatusCode() != http.StatusOK {
 		return "", fmt.Errorf("CDEK token API error: Status %s, Body: %s", resp.Status(), resp.String())
@@ -202,106 +205,6 @@ func (s *CdekService) CreateCdekOrder(cartIDStr string) (string, error) {
 	}
 
 	return cdekResp.Entity.UUID, nil
-}
-
-func (s *CdekService) getCityCode(cityName string, countryCode string) (int, error) {
-	token, err := s.GetToken()
-	if err != nil {
-		return 0, fmt.Errorf("failed to get CDEK token for city lookup: %w", err)
-	}
-
-	client := resty.New()
-	resp, err := client.R().
-		SetHeader("Authorization", "Bearer "+token).
-		SetQueryParams(map[string]string{
-			"country_codes": countryCode,
-			"city":          cityName,
-			"size":          "1",
-		}).
-		Get("https://api.cdek.ru/v2/location/cities")
-
-	if err != nil {
-		return 0, fmt.Errorf("failed to query CDEK cities API: %w", err)
-	}
-
-	if resp.StatusCode() != http.StatusOK {
-		return 0, fmt.Errorf("CDEK cities API error: Status %s, Body: %s", resp.Status(), resp.String())
-	}
-
-	var cities []model.CityInfo
-	if err := json.Unmarshal(resp.Body(), &cities); err != nil {
-		return 0, fmt.Errorf("failed to unmarshal cities response: %w. Body: %s", err, resp.String())
-	}
-
-	if len(cities) == 0 {
-		return 0, fmt.Errorf("city not found in CDEK database: %s, country: %s", cityName, countryCode)
-	}
-
-	log.Printf("Найден код города СДЭК: %d для %s (%s)", cities[0].Code, cityName, countryCode)
-	return cities[0].Code, nil
-}
-
-func (s *CdekService) getRegionCode(regionName string, countryCode string) (int, error) {
-	token, err := s.GetToken()
-	if err != nil {
-		return 0, fmt.Errorf("failed to get CDEK token for region lookup: %w", err)
-	}
-
-	client := resty.New()
-	queryParams := map[string]string{
-		"country_codes": countryCode,
-		"region":        regionName,
-		"size":          "5",
-	}
-	log.Printf("Запрос кода региона к API СДЭК /v2/location/regions с параметрами: %+v", queryParams)
-
-	resp, err := client.R().
-		SetHeader("Authorization", "Bearer "+token).
-		SetQueryParams(queryParams).
-		Get("https://api.cdek.ru/v2/location/regions")
-
-	if err != nil {
-		return 0, fmt.Errorf("failed to query CDEK regions API: %w", err)
-	}
-
-	bodyBytes := resp.Body()
-	log.Printf("Ответ от API СДЭК /v2/location/regions (статус %d): %s", resp.StatusCode(), string(bodyBytes))
-
-	if resp.StatusCode() != http.StatusOK {
-		return 0, fmt.Errorf("CDEK regions API error: Status %d", resp.StatusCode())
-	}
-
-	var regions []model.RegionInfo
-	if err := json.Unmarshal(bodyBytes, &regions); err != nil {
-		return 0, fmt.Errorf("failed to unmarshal regions response: %w", err)
-	}
-
-	if len(regions) == 0 {
-		return 0, fmt.Errorf("region not found in CDEK database (empty list returned): %s, country: %s", regionName, countryCode)
-	}
-
-	found := false
-	var foundCode int
-	targetRegionLower := strings.ToLower(regionName)
-
-	log.Printf("Ищем регион '%s' в ответе API:", targetRegionLower)
-	for i, reg := range regions {
-		log.Printf("  Проверяем [%d]: Код=%d, Название='%s', Страна=%s", i, reg.RegionCode, reg.Region, reg.CountryCode)
-		if strings.ToLower(reg.Region) == targetRegionLower {
-			log.Printf("    Найдено точное совпадение! Используем код: %d", reg.RegionCode)
-			foundCode = reg.RegionCode
-			found = true
-			break
-		}
-	}
-
-	if !found {
-		log.Printf("Точное совпадение для региона '%s' не найдено в ответе API.", regionName)
-		return 0, fmt.Errorf("region not found in CDEK database (no exact match): %s, country: %s", regionName, countryCode)
-	}
-
-	log.Printf("Используем найденный код региона СДЭК: %d для %s (%s)", foundCode, regionName, countryCode)
-	return foundCode, nil
 }
 
 func (s *CdekService) GetPvzList(params map[string]string) ([]model.Pvz, error) {
