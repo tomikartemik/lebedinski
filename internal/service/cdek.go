@@ -29,6 +29,13 @@ func NewCdekService(itemRepo repository.Item, repoOrder repository.Order) *CdekS
 func (s *CdekService) GetToken() (string, error) {
 	account := os.Getenv("ACCOUNT_TOKEN")
 	secure := os.Getenv("SECURE_TOKEN")
+
+	if account == "" || secure == "" {
+		return "", fmt.Errorf("ACCOUNT_TOKEN or SECURE_TOKEN environment variables are not set")
+	}
+
+	log.Printf("Получение токена СДЭК с учетными данными: account=%s, secure=%s", account, secure)
+
 	client := resty.New()
 	resp, err := client.R().
 		SetFormData(map[string]string{
@@ -39,16 +46,27 @@ func (s *CdekService) GetToken() (string, error) {
 		Post("https://api.cdek.ru/v2/oauth/token")
 
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to request CDEK token: %w", err)
+	}
+
+	if resp.StatusCode() != http.StatusOK {
+		return "", fmt.Errorf("CDEK token API error: Status %s, Body: %s", resp.Status(), resp.String())
 	}
 
 	var tokenResp struct {
 		AccessToken string `json:"access_token"`
+		TokenType   string `json:"token_type"`
+		ExpiresIn   int    `json:"expires_in"`
 	}
 	if err := json.Unmarshal(resp.Body(), &tokenResp); err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to unmarshal token response: %w. Body: %s", err, resp.String())
 	}
 
+	if tokenResp.AccessToken == "" {
+		return "", fmt.Errorf("empty access token in response: %s", resp.String())
+	}
+
+	log.Printf("Успешно получен токен СДЭК: тип=%s, срок действия=%d сек", tokenResp.TokenType, tokenResp.ExpiresIn)
 	return tokenResp.AccessToken, nil
 }
 
@@ -308,7 +326,7 @@ func (s *CdekService) GetPvzList(params map[string]string) ([]model.Pvz, error) 
 
 	client := resty.New()
 	request := client.R().
-		SetHeader("Authorization", "Bearer "+token).
+		SetHeader("Authorization", fmt.Sprintf("Bearer %s", token)).
 		SetHeader("Content-Type", "application/json").
 		SetQueryParams(pvzParams)
 
