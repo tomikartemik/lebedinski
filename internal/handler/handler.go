@@ -4,9 +4,6 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"lebedinski/internal/service"
-	"net/http"
-	"strings"
-	"log"
 )
 
 type Handler struct {
@@ -85,41 +82,4 @@ func (h *Handler) InitRoutes() *gin.Engine {
 	}
 
 	return router
-}
-
-func (h *Handler) GetPvzList(c *gin.Context) {
-	country := c.Query("country")
-	cityCode := c.Query("city_code")
-
-	if country == "" || cityCode == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "country and city_code are required"})
-		return
-	}
-
-	// Преобразование названия страны в код
-	countryCode := ""
-	switch strings.ToLower(country) {
-	case "россия":
-		countryCode = "RU"
-	default:
-		c.JSON(http.StatusBadRequest, gin.H{"error": "unsupported country"})
-		return
-	}
-
-	params := map[string]string{
-		"country_codes": countryCode,
-		"city_code":     cityCode,
-	}
-
-	log.Printf("Запрос списка ПВЗ СДЭК от фронтенда: страна=%s, код города=%s -> параметры для сервиса: %+v", country, cityCode, params)
-
-	pvzList, err := h.services.Cdek.GetPvzList(params)
-	if err != nil {
-		log.Printf("Ошибка получения списка ПВЗ из сервиса: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	log.Printf("Получено %d ПВЗ от API СДЭК", len(pvzList))
-	c.JSON(http.StatusOK, pvzList)
 }
