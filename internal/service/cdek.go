@@ -287,16 +287,11 @@ func (s *CdekService) getRegionCode(regionName string, countryCode string) (int,
 }
 
 func (s *CdekService) GetPvzList(params map[string]string) ([]model.Pvz, error) {
-	regionName := params["region"]
+	cityCode := params["city_code"]
 	countryCode := params["country_codes"]
 
-	if regionName == "" || countryCode == "" {
-		return nil, errors.New("region name and country code are required in service params")
-	}
-
-	regionCode, err := s.getRegionCode(regionName, countryCode)
-	if err != nil {
-		return nil, err
+	if cityCode == "" || countryCode == "" {
+		return nil, errors.New("city code and country code are required in service params")
 	}
 
 	token, err := s.GetToken()
@@ -305,8 +300,8 @@ func (s *CdekService) GetPvzList(params map[string]string) ([]model.Pvz, error) 
 	}
 
 	pvzParams := map[string]string{
-		"region_code": strconv.Itoa(regionCode),
-		"type":        "PVZ",
+		"city_code": cityCode,
+		"type":      "PVZ",
 	}
 
 	log.Printf("Запрос списка ПВЗ с параметрами для API СДЭК: %+v", pvzParams)
