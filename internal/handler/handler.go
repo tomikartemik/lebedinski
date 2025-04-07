@@ -30,6 +30,11 @@ func (h *Handler) InitRoutes() *gin.Engine {
 
 	router.Static("/uploads", "./uploads")
 
+	banner := router.Group("/banner")
+	{
+		banner.POST("/upload", h.UploadBanner)
+	}
+
 	item := router.Group("/item")
 	{
 		item.POST("/new", h.CreateItem)
