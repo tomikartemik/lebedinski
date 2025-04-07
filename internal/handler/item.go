@@ -44,14 +44,23 @@ func (h *Handler) ItemByID(c *gin.Context) {
 }
 
 func (h *Handler) UpdateItem(c *gin.Context) {
-	var item model.Item
+	id := c.Query("id")
+	if id == "" {
+		utils.NewErrorResponse(c, http.StatusBadRequest, "item id is required")
+		return
+	}
 
-	if err := c.ShouldBindJSON(&item); err != nil {
+	var updateData map[string]interface{}
+
+	if err := c.ShouldBindJSON(&updateData); err != nil {
 		utils.NewErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	if err := h.services.UpdateItem(item); err != nil {
+	// Удаляем поле "id" из данных для обновления, так как оно уже есть в URL
+	delete(updateData, "id")
+
+	if err := h.services.UpdateItem(id, updateData); err != nil {
 		utils.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
 	}
 

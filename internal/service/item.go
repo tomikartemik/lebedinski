@@ -52,8 +52,16 @@ func (s *ItemService) GetItemByID(idStr string) (model.Item, error) {
 	return item, nil
 }
 
-func (s *ItemService) UpdateItem(item model.Item) error {
-	return s.repo.UpdateItem(item)
+func (s *ItemService) UpdateItem(itemIDStr string, updateData map[string]interface{}) error {
+	itemID, err := strconv.Atoi(itemIDStr)
+	if err != nil {
+		return err
+	}
+
+	// Опционально: здесь можно добавить валидацию данных в updateData,
+	// например, пересчет скидки, если меняется цена.
+
+	return s.repo.UpdateItem(itemID, updateData)
 }
 
 func (s *ItemService) DeleteItem(itemIDStr string) error {

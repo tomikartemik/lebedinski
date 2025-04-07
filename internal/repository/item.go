@@ -37,8 +37,8 @@ func (r *ItemRepository) GetItemByID(id int) (model.Item, error) {
 	return item, nil
 }
 
-func (r *ItemRepository) UpdateItem(item model.Item) error {
-	return r.db.Model(&model.Item{}).Where("id = ?", item.ID).Select("*").Updates(&item).Error
+func (r *ItemRepository) UpdateItem(itemID int, updateData map[string]interface{}) error {
+	return r.db.Model(&model.Item{}).Where("id = ?", itemID).Updates(updateData).Error
 }
 
 func (r *ItemRepository) DeleteItem(itemID int) error {
