@@ -35,7 +35,7 @@ func (s *PaymentService) CreatePayment(order model.Order) (*model.PaymentRespons
 
 	for _, cartItem := range cart.Items {
 		item, _ := s.repoItem.GetItemByID(cartItem.ItemID)
-		amount = amount + float64(cartItem.Quantity*item.Price)
+		amount = amount + float64(cartItem.Quantity*item.ActualPrice)
 	}
 
 	paymentRequest := model.PaymentRequest{
