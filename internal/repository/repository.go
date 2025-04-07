@@ -29,7 +29,7 @@ type Item interface {
 	CreateItem(item model.Item) (int, error)
 	GetAllItems() ([]model.Item, error)
 	GetItemByID(id int) (model.Item, error)
-	UpdateItem(item model.Item) error
+	UpdateItem(itemID int, updateData map[string]interface{}) error
 	DeleteItem(itemID int) error
 }
 
