@@ -34,6 +34,8 @@ type Item interface {
 
 type Photo interface {
 	NewPhoto(photo model.Photo) error
+	DeletePhoto(photoID int) error
+	GetPhotoByID(photoID int) (model.Photo, error)
 }
 
 type Size interface {

@@ -39,6 +39,7 @@ type Item interface {
 
 type Photo interface {
 	SavePhoto(itemIDStr string, file *multipart.FileHeader) error
+	DeletePhoto(photoIDStr string) error
 }
 
 type Size interface {
