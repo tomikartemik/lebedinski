@@ -41,6 +41,7 @@ func (h *Handler) InitRoutes() *gin.Engine {
 	photo := router.Group("/photo")
 	{
 		photo.POST("/new", h.UploadPhoto)
+		photo.DELETE("", h.DeletePhoto)
 	}
 
 	size := router.Group("size")

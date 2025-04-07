@@ -65,3 +65,28 @@ func (s *PhotoService) SavePhoto(itemIDStr string, file *multipart.FileHeader) e
 
 	return nil
 }
+
+func (s *PhotoService) DeletePhoto(photoIDStr string) error {
+	photoID, err := strconv.Atoi(photoIDStr)
+	if err != nil {
+		return fmt.Errorf("invalid photo ID: %v", err)
+	}
+
+	// Получаем информацию о фото из базы данных
+	photo, err := s.repo.GetPhotoByID(photoID)
+	if err != nil {
+		return fmt.Errorf("photo not found: %v", err)
+	}
+
+	// Удаляем файл с сервера
+	if err := os.Remove(photo.Link); err != nil {
+		return fmt.Errorf("unable to delete photo file: %v", err)
+	}
+
+	// Удаляем запись из базы данных
+	if err := s.repo.DeletePhoto(photoID); err != nil {
+		return fmt.Errorf("unable to delete photo from database: %v", err)
+	}
+
+	return nil
+}
