@@ -24,19 +24,27 @@ func (h *Handler) AddNewSizes(c *gin.Context) {
 }
 
 func (h *Handler) UpdateSize(c *gin.Context) {
-	var size model.Size
-
-	if err := c.ShouldBindJSON(&size); err != nil {
-		utils.NewErrorResponse(c, http.StatusBadRequest, err.Error())
+	id := c.Query("id")
+	if id == "" {
+		utils.NewErrorResponse(c, http.StatusBadRequest, "item id is required")
+		return
 	}
 
-	err := h.services.UpdateSize(size)
+	var updateData map[string]interface{}
 
-	if err != nil {
+	if err := c.ShouldBindJSON(&updateData); err != nil {
+		utils.NewErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	// Удаляем поле "id" из данных для обновления, так как оно уже есть в URL
+	delete(updateData, "id")
+
+	if err := h.services.UpdateSize(id, updateData); err != nil {
 		utils.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
 	}
 
-	c.JSON(http.StatusOK, "Size successfully updated")
+	c.JSON(http.StatusOK, model.SuccessResponse{Message: "Size updated!"})
 }
 
 func (h *Handler) DeleteSize(c *gin.Context) {

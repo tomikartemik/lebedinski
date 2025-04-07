@@ -45,7 +45,7 @@ type Photo interface {
 
 type Size interface {
 	AddNewSizes(sizes []model.Size) error
-	UpdateSize(size model.Size) error
+	UpdateSize(sizeIDStr string, updateData map[string]interface{}) error
 	DeleteSize(sizeIDStr string) error
 }
 

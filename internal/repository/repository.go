@@ -42,7 +42,7 @@ type Photo interface {
 type Size interface {
 	AddNewSizes(sizes []model.Size) error
 	DecreaseStock(itemID int, size string, quantity int) error
-	UpdateSize(size model.Size) error
+	UpdateSize(sizeID int, updateData map[string]interface{}) error
 	DeleteSize(sizeID int) error
 }
 

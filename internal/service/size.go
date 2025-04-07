@@ -18,8 +18,16 @@ func (s *SizeService) AddNewSizes(sizes []model.Size) error {
 	return s.repo.AddNewSizes(sizes)
 }
 
-func (s *SizeService) UpdateSize(size model.Size) error {
-	return s.repo.UpdateSize(size)
+func (s *SizeService) UpdateSize(sizeIDStr string, updateData map[string]interface{}) error {
+	sizeID, err := strconv.Atoi(sizeIDStr)
+	if err != nil {
+		return err
+	}
+
+	// Опционально: здесь можно добавить валидацию данных в updateData,
+	// например, пересчет скидки, если меняется цена.
+
+	return s.repo.UpdateSize(sizeID, updateData)
 }
 
 func (s *SizeService) DeleteSize(sizeIDStr string) error {
