@@ -41,6 +41,7 @@ func (h *Handler) InitRoutes() *gin.Engine {
 		item.GET("/all", h.AllItems)
 		item.GET("", h.ItemByID)
 		item.PUT("", h.UpdateItem)
+		item.DELETE("", h.DeleteItem)
 	}
 
 	photo := router.Group("/photo")

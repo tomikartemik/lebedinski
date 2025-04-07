@@ -40,3 +40,39 @@ func (r *ItemRepository) GetItemByID(id int) (model.Item, error) {
 func (r *ItemRepository) UpdateItem(item model.Item) error {
 	return r.db.Where("id = ?", item.ID).Updates(&item).Error
 }
+
+func (r *ItemRepository) DeleteItem(itemID int) error {
+	// Начинаем транзакцию
+	tx := r.db.Begin()
+	if tx.Error != nil {
+		return tx.Error
+	}
+
+	// Получаем информацию о товаре для удаления фотографий
+	var item model.Item
+	if err := tx.Where("id = ?", itemID).Preload("Photos").First(&item).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// Удаляем все размеры товара
+	if err := tx.Where("item_id = ?", itemID).Delete(&model.Size{}).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// Удаляем все фотографии товара из базы данных
+	if err := tx.Where("item_id = ?", itemID).Delete(&model.Photo{}).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// Удаляем сам товар
+	if err := tx.Delete(&item).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// Завершаем транзакцию
+	return tx.Commit().Error
+}

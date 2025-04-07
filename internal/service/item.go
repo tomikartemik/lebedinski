@@ -4,6 +4,7 @@ import (
 	"lebedinski/internal/model"
 	"lebedinski/internal/repository"
 	"lebedinski/internal/utils"
+	"os"
 	"strconv"
 )
 
@@ -53,4 +54,27 @@ func (s *ItemService) GetItemByID(idStr string) (model.Item, error) {
 
 func (s *ItemService) UpdateItem(item model.Item) error {
 	return s.repo.UpdateItem(item)
+}
+
+func (s *ItemService) DeleteItem(itemIDStr string) error {
+	itemID, err := strconv.Atoi(itemIDStr)
+	if err != nil {
+		return err
+	}
+
+	// Получаем информацию о товаре для удаления фотографий
+	item, err := s.repo.GetItemByID(itemID)
+	if err != nil {
+		return err
+	}
+
+	// Удаляем все фотографии товара с сервера
+	for _, photo := range item.Photos {
+		if err := os.Remove(photo.Link); err != nil {
+			return err
+		}
+	}
+
+	// Удаляем товар и связанные данные из базы
+	return s.repo.DeleteItem(itemID)
 }

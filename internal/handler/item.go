@@ -57,3 +57,18 @@ func (h *Handler) UpdateItem(c *gin.Context) {
 
 	c.JSON(http.StatusOK, model.SuccessResponse{Message: "Item updated!"})
 }
+
+func (h *Handler) DeleteItem(c *gin.Context) {
+	id := c.Query("id")
+	if id == "" {
+		utils.NewErrorResponse(c, http.StatusBadRequest, "id is required")
+		return
+	}
+
+	if err := h.services.DeleteItem(id); err != nil {
+		utils.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, model.SuccessResponse{Message: "Item deleted successfully"})
+}

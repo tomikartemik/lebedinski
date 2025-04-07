@@ -30,6 +30,7 @@ type Item interface {
 	GetAllItems() ([]model.Item, error)
 	GetItemByID(id int) (model.Item, error)
 	UpdateItem(item model.Item) error
+	DeleteItem(itemID int) error
 }
 
 type Photo interface {
