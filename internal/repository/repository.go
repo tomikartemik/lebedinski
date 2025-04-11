@@ -31,6 +31,8 @@ type Item interface {
 	GetItemByID(id int) (model.Item, error)
 	UpdateItem(itemID int, updateData map[string]interface{}) error
 	DeleteItem(itemID int) error
+	GetTopItems() ([]model.Top, error)
+	ChangeTopItem(position, itemID int) error
 }
 
 type Photo interface {

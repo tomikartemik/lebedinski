@@ -5,6 +5,7 @@ import (
 	"lebedinski/internal/model"
 	"lebedinski/internal/utils"
 	"net/http"
+	"strconv"
 )
 
 func (h *Handler) CreateItem(c *gin.Context) {
@@ -80,4 +81,38 @@ func (h *Handler) DeleteItem(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, model.SuccessResponse{Message: "Item deleted successfully"})
+}
+
+func (h *Handler) GetTopItems(c *gin.Context) {
+	items, err := h.services.GetTopItems()
+
+	if err != nil {
+		utils.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
+	}
+
+	c.JSON(http.StatusOK, items)
+}
+
+func (h *Handler) ChangeTopItem(c *gin.Context) {
+	positionStr := c.Query("position")
+	position, err := strconv.Atoi(positionStr)
+
+	if err != nil {
+		utils.NewErrorResponse(c, http.StatusBadRequest, err.Error())
+	}
+
+	itemIDStr := c.Query("item_id")
+	itemID, err := strconv.Atoi(itemIDStr)
+
+	if err != nil {
+		utils.NewErrorResponse(c, http.StatusBadRequest, err.Error())
+	}
+
+	err = h.services.ChangeTopItem(position, itemID)
+
+	if err != nil {
+		utils.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
+	}
+
+	c.JSON(http.StatusOK, model.SuccessResponse{Message: "Item changed successfully!"})
 }

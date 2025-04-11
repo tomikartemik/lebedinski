@@ -76,3 +76,15 @@ func (r *ItemRepository) DeleteItem(itemID int) error {
 	// Завершаем транзакцию
 	return tx.Commit().Error
 }
+
+func (r *ItemRepository) GetTopItems() ([]model.Top, error) {
+	var tops []model.Top
+	if err := r.db.Model(&model.Top{}).Find(&tops).Error; err != nil {
+		return nil, err
+	}
+	return tops, nil
+}
+
+func (r *ItemRepository) ChangeTopItem(position, itemID int) error {
+	return r.db.Model(&model.Top{}).Where("position = ?", position).Update("item_id", itemID).Error
+}

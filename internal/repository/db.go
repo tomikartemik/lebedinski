@@ -28,7 +28,8 @@ func ConnectDB() (*gorm.DB, error) {
 		model.Size{},
 		model.Cart{}, // This should come before CartItem
 		model.Order{},
-		model.CartItem{}, // This references Cart, so it comes after
+		model.CartItem{},
+		model.Top{}, // This references Cart, so it comes after
 	)
 
 	if err != nil {

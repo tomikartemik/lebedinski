@@ -5,6 +5,7 @@ import (
 	"lebedinski/internal/repository"
 	"lebedinski/internal/utils"
 	"os"
+	"sort"
 	"strconv"
 )
 
@@ -85,4 +86,31 @@ func (s *ItemService) DeleteItem(itemIDStr string) error {
 
 	// Удаляем товар и связанные данные из базы
 	return s.repo.DeleteItem(itemID)
+}
+
+func (s *ItemService) GetTopItems() ([]model.Item, error) {
+	var items []model.Item
+
+	tops, err := s.repo.GetTopItems()
+	if err != nil {
+		return nil, err
+	}
+
+	sort.Slice(tops, func(i, j int) bool {
+		return false
+	})
+
+	for _, top := range tops {
+		item, err := s.repo.GetItemByID(top.ItemID)
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, item)
+	}
+
+	return items, nil
+}
+
+func (s *ItemService) ChangeTopItem(position, itemID int) error {
+	return s.repo.ChangeTopItem(position, itemID)
 }
