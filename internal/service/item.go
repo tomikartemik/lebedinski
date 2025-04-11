@@ -88,8 +88,8 @@ func (s *ItemService) DeleteItem(itemIDStr string) error {
 	return s.repo.DeleteItem(itemID)
 }
 
-func (s *ItemService) GetTopItems() ([]model.Item, error) {
-	var items []model.Item
+func (s *ItemService) GetTopItems() ([]model.ItemShortInfo, error) {
+	var items []model.ItemShortInfo
 
 	tops, err := s.repo.GetTopItems()
 	if err != nil {
@@ -97,7 +97,7 @@ func (s *ItemService) GetTopItems() ([]model.Item, error) {
 	}
 
 	sort.Slice(tops, func(i, j int) bool {
-		return false
+		return tops[i].Position < tops[j].Position
 	})
 
 	for _, top := range tops {
@@ -105,7 +105,7 @@ func (s *ItemService) GetTopItems() ([]model.Item, error) {
 		if err != nil {
 			return nil, err
 		}
-		items = append(items, item)
+		items = append(items, utils.ConvertItemToShortInfo(item))
 	}
 
 	return items, nil
