@@ -12,6 +12,7 @@ func ConvertItemToShortInfo(item model.Item) model.ItemShortInfo {
 		SoldOut:     item.SoldOut,
 		CategoryID:  item.CategoryID,
 		Category:    item.Category,
+		Sizes:       item.Sizes,
 		Photos:      item.Photos,
 	}
 }

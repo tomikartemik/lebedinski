@@ -25,6 +25,7 @@ type ItemShortInfo struct {
 	SoldOut     bool     `json:"sold_out"`
 	CategoryID  int      `json:"category_id"`
 	Category    Category `json:"category"`
+	Sizes       []Size   `json:"sizes"`
 	Photos      []Photo  `json:"photos"`
 }
 
