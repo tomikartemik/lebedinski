@@ -33,9 +33,9 @@ func (h *Handler) InitRoutes() *gin.Engine {
 	banner := router.Group("/banner")
 	{
 		banner.POST("/upload", h.UploadBanner)
-		banner.POST("/upload", h.UploadMobileBanner)
-		banner.GET("/banner", h.GetBanner)
-		banner.GET("/mobile_banner", h.GetMobileBanner)
+		banner.POST("/upload_mobile", h.UploadMobileBanner)
+		banner.GET("", h.GetBanner)
+		banner.GET("/mobile", h.GetMobileBanner)
 	}
 
 	item := router.Group("/item")
