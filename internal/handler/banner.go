@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"os"
@@ -8,7 +9,6 @@ import (
 	"strings"
 )
 
-// UploadBanner загружает основной баннер
 func (h *Handler) UploadBanner(c *gin.Context) {
 	file, err := c.FormFile("banner")
 	if err != nil {
@@ -54,74 +54,27 @@ func (h *Handler) UploadBanner(c *gin.Context) {
 		return
 	}
 
-	// Сохраняем тип контента в отдельном файле
-	if err := os.WriteFile(filepath.Join("uploads", "banner.content-type"), []byte(contentType), 0644); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to save content type"})
+	// Сохраняем тип контента и расширение в отдельном файле
+	meta := struct {
+		ContentType string `json:"content_type"`
+		Extension   string `json:"extension"`
+	}{
+		ContentType: contentType,
+		Extension:   ext,
+	}
+
+	metaJson, _ := json.Marshal(meta)
+	if err := os.WriteFile(filepath.Join("uploads", "banner.meta"), metaJson, 0644); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to save meta data"})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Banner uploaded successfully"})
 }
 
-// UploadMobileBanner загружает мобильный баннер
-func (h *Handler) UploadMobileBanner(c *gin.Context) {
-	file, err := c.FormFile("mobile_banner")
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Unable to get mobile banner file from form"})
-		return
-	}
-
-	ext := strings.ToLower(filepath.Ext(file.Filename))
-	allowedExtensions := map[string]string{
-		".jpg":  "image/jpeg",
-		".jpeg": "image/jpeg",
-		".png":  "image/png",
-		".gif":  "image/gif",
-		".mp4":  "video/mp4",
-		".webp": "image/webp",
-	}
-
-	contentType, ok := allowedExtensions[ext]
-	if !ok {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid file format"})
-		return
-	}
-
-	if err := os.MkdirAll("uploads", os.ModePerm); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to create upload directory"})
-		return
-	}
-
-	// Сохраняем файл без расширения
-	bannerPath := filepath.Join("uploads", "mobile_banner")
-
-	// Удаляем старый файл если существует
-	if _, err := os.Stat(bannerPath); err == nil {
-		if err := os.Remove(bannerPath); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to remove existing mobile banner"})
-			return
-		}
-	}
-
-	// Сохраняем файл
-	if err := c.SaveUploadedFile(file, bannerPath); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to save mobile banner file"})
-		return
-	}
-
-	// Сохраняем тип контента в отдельном файле
-	if err := os.WriteFile(filepath.Join("uploads", "mobile_banner.content-type"), []byte(contentType), 0644); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to save content type"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "Mobile banner uploaded successfully"})
-}
-
-// GetBanner возвращает основной баннер с правильным Content-Type
 func (h *Handler) GetBanner(c *gin.Context) {
 	bannerPath := filepath.Join("uploads", "banner")
-	contentTypePath := filepath.Join("uploads", "banner.content-type")
+	metaPath := filepath.Join("uploads", "banner.meta")
 
 	// Проверяем существование файла
 	if _, err := os.Stat(bannerPath); os.IsNotExist(err) {
@@ -129,37 +82,33 @@ func (h *Handler) GetBanner(c *gin.Context) {
 		return
 	}
 
-	// Читаем тип контента
-	contentType, err := os.ReadFile(contentTypePath)
+	// Читаем метаданные
+	metaJson, err := os.ReadFile(metaPath)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to read content type"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to read meta data"})
 		return
 	}
 
-	// Отправляем файл с правильным Content-Type
-	c.Header("Content-Type", string(contentType))
-	c.File(bannerPath)
-}
-
-// GetMobileBanner возвращает мобильный баннер с правильным Content-Type
-func (h *Handler) GetMobileBanner(c *gin.Context) {
-	bannerPath := filepath.Join("uploads", "mobile_banner")
-	contentTypePath := filepath.Join("uploads", "mobile_banner.content-type")
-
-	// Проверяем существование файла
-	if _, err := os.Stat(bannerPath); os.IsNotExist(err) {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Mobile banner not found"})
+	var meta struct {
+		ContentType string `json:"content_type"`
+		Extension   string `json:"extension"`
+	}
+	if err := json.Unmarshal(metaJson, &meta); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to parse meta data"})
 		return
 	}
 
-	// Читаем тип контента
-	contentType, err := os.ReadFile(contentTypePath)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to read content type"})
+	// Если запрос пришел с правильным расширением - отдаем файл
+	if strings.HasSuffix(c.Request.URL.Path, meta.Extension) {
+		c.Header("Content-Type", meta.ContentType)
+		c.File(bannerPath)
 		return
 	}
 
-	// Отправляем файл с правильным Content-Type
-	c.Header("Content-Type", string(contentType))
-	c.File(bannerPath)
+	// Если запрос без расширения - редиректим на URL с расширением
+	newUrl := c.Request.URL.Path + meta.Extension
+	if c.Request.URL.RawQuery != "" {
+		newUrl += "?" + c.Request.URL.RawQuery
+	}
+	c.Redirect(http.StatusMovedPermanently, newUrl)
 }
