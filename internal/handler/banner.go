@@ -72,47 +72,6 @@ func (h *Handler) UploadBanner(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Banner uploaded successfully"})
 }
 
-func (h *Handler) GetBanner(c *gin.Context) {
-	bannerPath := filepath.Join("uploads", "banner")
-	metaPath := filepath.Join("uploads", "banner.meta")
-
-	// Проверяем существование файла
-	if _, err := os.Stat(bannerPath); os.IsNotExist(err) {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Banner not found"})
-		return
-	}
-
-	// Читаем метаданные
-	metaJson, err := os.ReadFile(metaPath)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to read meta data"})
-		return
-	}
-
-	var meta struct {
-		ContentType string `json:"content_type"`
-		Extension   string `json:"extension"`
-	}
-	if err := json.Unmarshal(metaJson, &meta); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to parse meta data"})
-		return
-	}
-
-	// Если запрос пришел с правильным расширением - отдаем файл
-	if strings.HasSuffix(c.Request.URL.Path, meta.Extension) {
-		c.Header("Content-Type", meta.ContentType)
-		c.File(bannerPath)
-		return
-	}
-
-	// Если запрос без расширения - редиректим на URL с расширением
-	newUrl := c.Request.URL.Path + meta.Extension
-	if c.Request.URL.RawQuery != "" {
-		newUrl += "?" + c.Request.URL.RawQuery
-	}
-	c.Redirect(http.StatusMovedPermanently, newUrl)
-}
-
 func (h *Handler) UploadMobileBanner(c *gin.Context) {
 	file, err := c.FormFile("mobile_banner")
 	if err != nil {
@@ -177,46 +136,4 @@ func (h *Handler) UploadMobileBanner(c *gin.Context) {
 		"message":   "Mobile banner uploaded successfully",
 		"extension": ext,
 	})
-}
-
-func (h *Handler) GetMobileBanner(c *gin.Context) {
-	bannerPath := filepath.Join("uploads", "mobile_banner")
-	metaPath := filepath.Join("uploads", "mobile_banner.meta")
-
-	// Проверяем существование файла
-	if _, err := os.Stat(bannerPath); os.IsNotExist(err) {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Mobile banner not found"})
-		return
-	}
-
-	// Читаем метаданные
-	metaJson, err := os.ReadFile(metaPath)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to read mobile banner meta data"})
-		return
-	}
-
-	var meta struct {
-		ContentType string `json:"content_type"`
-		Extension   string `json:"extension"`
-	}
-	if err := json.Unmarshal(metaJson, &meta); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to parse mobile banner meta data"})
-		return
-	}
-
-	// Если запрос уже содержит правильное расширение
-	if strings.HasSuffix(c.Request.URL.Path, meta.Extension) {
-		c.Header("Content-Type", meta.ContentType)
-		c.Header("Cache-Control", "public, max-age=86400") // Кеширование на 1 день
-		c.File(bannerPath)
-		return
-	}
-
-	// Редирект на URL с правильным расширением
-	newUrl := strings.TrimSuffix(c.Request.URL.Path, "/") + meta.Extension
-	if c.Request.URL.RawQuery != "" {
-		newUrl += "?" + c.Request.URL.RawQuery
-	}
-	c.Redirect(http.StatusMovedPermanently, newUrl)
 }
