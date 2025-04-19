@@ -39,7 +39,7 @@ func (h *Handler) InitRoutes() *gin.Engine {
 	item := router.Group("/item")
 	{
 		item.POST("/new", h.CreateItem)
-		item.POST("change-top-item", h.ChangeTopItem)
+		item.POST("/change-top-item", h.ChangeTopItem)
 		item.GET("/all", h.AllItems)
 		item.GET("", h.ItemByID)
 		item.GET("/top", h.GetTopItems)
