@@ -15,18 +15,20 @@ type Service struct {
 	Payment
 	Cart
 	Cdek
+	PromoCode
 }
 
 func NewService(repos *repository.Repository) *Service {
 	return &Service{
-		Item:     NewItemService(repos),
-		Photo:    NewPhotoService(repos),
-		Size:     NewSizeService(repos),
-		Category: NewCategoryService(repos),
-		Payment:  NewPaymentService(repos.Item, repos.Cart),
-		Cart:     NewCartService(repos.Cart, repos.Item),
-		Cdek:     NewCdekService(repos.Item, repos.Order),
-		Order:    NewOrderService(repos.Item, repos.Order, repos.Size),
+		Item:      NewItemService(repos),
+		Photo:     NewPhotoService(repos),
+		Size:      NewSizeService(repos),
+		Category:  NewCategoryService(repos),
+		Payment:   NewPaymentService(repos.Item, repos.Cart),
+		Cart:      NewCartService(repos.Cart, repos.Item),
+		Cdek:      NewCdekService(repos.Item, repos.Order),
+		Order:     NewOrderService(repos.Item, repos.Order, repos.Size),
+		PromoCode: NewPromoCodeService(repos.PromoCode),
 	}
 }
 
@@ -77,4 +79,9 @@ type Cdek interface {
 	GetToken() (string, error)
 	CreateCdekOrder(cartIDStr string) (string, error)
 	GetPvzList(params map[string]string) ([]model.Pvz, error)
+}
+
+type PromoCode interface {
+	CreatePromoCode(promocode model.PromoCode) error
+	GetPromoCodeByCode(code string) (model.PromoCode, error)
 }

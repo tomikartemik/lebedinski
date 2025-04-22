@@ -26,10 +26,11 @@ func ConnectDB() (*gorm.DB, error) {
 		model.Item{},
 		model.Photo{},
 		model.Size{},
-		model.Cart{}, // This should come before CartItem
+		model.Cart{},
 		model.Order{},
 		model.CartItem{},
-		model.Top{}, // This references Cart, so it comes after
+		model.Top{},
+		model.PromoCode{},
 	)
 
 	if err != nil {

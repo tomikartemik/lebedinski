@@ -10,6 +10,7 @@ type Order struct {
 	Promocode      string `json:"promocode" json:"promocode"`
 	Status         string `gorm:"default:'created';not null"`
 	PaymentID      string `gorm:"not null" json:"payment_id"`
+	TelegramID     string `gorm:"not null" json:"telegram_id"`
 	CdekOrderUUID  string `json:"cdek_order_uuid"`
 }
 

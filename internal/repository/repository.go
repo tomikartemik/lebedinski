@@ -12,16 +12,18 @@ type Repository struct {
 	Category
 	Cart
 	Order
+	PromoCode
 }
 
 func NewRepository(db *gorm.DB) *Repository {
 	return &Repository{
-		Item:     NewItemRepository(db),
-		Photo:    NewPhotoRepository(db),
-		Size:     NewSizeRepository(db),
-		Category: NewCategoryRepository(db),
-		Cart:     NewCartRepository(db),
-		Order:    NewOrderRepository(db),
+		Item:      NewItemRepository(db),
+		Photo:     NewPhotoRepository(db),
+		Size:      NewSizeRepository(db),
+		Category:  NewCategoryRepository(db),
+		Cart:      NewCartRepository(db),
+		Order:     NewOrderRepository(db),
+		PromoCode: NewPromoCodeRepository(db),
 	}
 }
 
@@ -66,4 +68,9 @@ type Order interface {
 	GetAllOrders() ([]model.Order, error)
 	GetOrderByCartID(id int) (model.Order, error)
 	UpdateOrder(order model.Order) error
+}
+
+type PromoCode interface {
+	CreatePromoCode(promocode model.PromoCode) error
+	GetPromoCodeByCode(code string) (model.PromoCode, error)
 }
