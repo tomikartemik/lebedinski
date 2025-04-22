@@ -47,7 +47,7 @@ func (s *PaymentService) CreatePayment(order model.Order) (*model.PaymentRespons
 		Capture:     true,
 		Confirmation: model.Confirmation{
 			Type:      "redirect",
-			ReturnURL: "https://xouston.com",
+			ReturnURL: "https://lebedinski.shop",
 		},
 		PaymentMethod: model.PaymentMethod{
 			Type: "bank_card",
