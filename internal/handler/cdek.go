@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"lebedinski/internal/model"
 	"lebedinski/internal/utils"
@@ -23,6 +24,7 @@ func (h *Handler) CreateOrder(c *gin.Context) {
 	//	return
 	//}
 
+	fmt.Println(order)
 	paymentResponse, err := h.services.CreatePayment(order)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
