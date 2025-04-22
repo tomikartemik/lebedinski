@@ -5,11 +5,11 @@ type Order struct {
 	FullName       string `gorm:"not null" json:"full_name"`
 	Email          string `gorm:"not null" json:"email"`
 	Phone          string `gorm:"not null" json:"phone"`
-	AdditionalInfo string `json:"additional_info" json:"additional_info"`
+	AdditionalInfo string `json:"additional_info"`
 	PointCode      string `gorm:"not null" json:"point_code"`
-	Promocode      string `json:"promocode" json:"promocode"`
+	Promocode      string `json:"promocode"`
 	Status         string `gorm:"default:'created';not null"`
-	PaymentID      string `gorm:"not null" json:"payment_id"`
+	PaymentID      string `json:"payment_id"`
 	TelegramID     string `gorm:"not null" json:"telegram_id"`
 	CdekOrderUUID  string `json:"cdek_order_uuid"`
 }
