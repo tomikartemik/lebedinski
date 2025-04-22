@@ -84,4 +84,7 @@ type Cdek interface {
 type PromoCode interface {
 	CreatePromoCode(promocode model.PromoCode) error
 	GetPromoCodeByCode(code string) (model.PromoCode, error)
+	GetAllPromoCodes() ([]model.PromoCode, error)
+	DeletePromoCodeByCode(code string) error
+	UpdatePromoCode(promocode model.PromoCode) error
 }

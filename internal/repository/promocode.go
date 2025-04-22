@@ -25,3 +25,19 @@ func (r *PromoCodeRepository) GetPromoCodeByCode(code string) (model.PromoCode, 
 	}
 	return promocode, nil
 }
+
+func (r *PromoCodeRepository) GetAllPromocodes() ([]model.PromoCode, error) {
+	var promocodes []model.PromoCode
+	if err := r.db.Find(&promocodes).Error; err != nil {
+		return promocodes, err
+	}
+	return promocodes, nil
+}
+
+func (r *PromoCodeRepository) DeletePromoCodeByCode(code string) error {
+	return r.db.Delete(&model.PromoCode{}, "code = ?", code).Error
+}
+
+func (r *PromoCodeRepository) UpdatePromoCode(promocode model.PromoCode) error {
+	return r.db.Save(&promocode).Error
+}

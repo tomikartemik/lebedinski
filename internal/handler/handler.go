@@ -95,6 +95,9 @@ func (h *Handler) InitRoutes() *gin.Engine {
 	{
 		promocode.POST("", h.CreatePromoCode)
 		promocode.GET("", h.GetPromocodeByCode)
+		promocode.GET("/all", h.GetPromocodeList)
+		promocode.DELETE("", h.DeletePromocode)
+		promocode.PUT("", h.UpdatePromocode)
 	}
 	return router
 }
