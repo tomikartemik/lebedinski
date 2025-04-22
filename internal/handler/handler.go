@@ -91,5 +91,10 @@ func (h *Handler) InitRoutes() *gin.Engine {
 		cdek.GET("/pvz", h.GetPvzList)
 	}
 
+	promocode := router.Group("promocode")
+	{
+		promocode.POST("", h.CreatePromoCode)
+		promocode.GET("", h.GetPromocodeByCode)
+	}
 	return router
 }
