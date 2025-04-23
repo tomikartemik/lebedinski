@@ -33,6 +33,7 @@ func (h *Handler) GetPromocodeByCode(c *gin.Context) {
 	promocode, err := h.services.GetPromoCodeByCode(code)
 	if err != nil {
 		utils.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
 	}
 
 	c.JSON(http.StatusOK, promocode)
