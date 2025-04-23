@@ -25,12 +25,14 @@ func (h *Handler) CreatePromoCode(c *gin.Context) {
 
 func (h *Handler) GetPromocodeByCode(c *gin.Context) {
 	code := c.Query("code")
+
 	if code == "" {
 		utils.NewErrorResponse(c, http.StatusBadRequest, "code is required")
 		return
 	}
 
 	promocode, err := h.services.GetPromoCodeByCode(code)
+
 	if err != nil {
 		utils.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
