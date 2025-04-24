@@ -24,7 +24,7 @@ func NewService(repos *repository.Repository) *Service {
 		Photo:     NewPhotoService(repos),
 		Size:      NewSizeService(repos),
 		Category:  NewCategoryService(repos),
-		Payment:   NewPaymentService(repos.Item, repos.Cart),
+		Payment:   NewPaymentService(repos.Item, repos.Cart, repos.PromoCode),
 		Cart:      NewCartService(repos.Cart, repos.Item),
 		Cdek:      NewCdekService(repos.Item, repos.Order),
 		Order:     NewOrderService(repos.Item, repos.Order, repos.Size),

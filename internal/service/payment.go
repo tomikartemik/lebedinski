@@ -11,15 +11,21 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 )
 
 type PaymentService struct {
-	repoItem repository.Item
-	repoCart repository.Cart
+	repoItem      repository.Item
+	repoCart      repository.Cart
+	repoPromoCode repository.PromoCode
 }
 
-func NewPaymentService(orderRepo repository.Item, repoCart repository.Cart) *PaymentService {
-	return &PaymentService{repoItem: orderRepo, repoCart: repoCart}
+func NewPaymentService(repoItem repository.Item, repoCart repository.Cart, repoPromoCode repository.PromoCode) *PaymentService {
+	return &PaymentService{
+		repoItem:      repoItem,
+		repoCart:      repoCart,
+		repoPromoCode: repoPromoCode,
+	}
 }
 
 func (s *PaymentService) CreatePayment(order model.Order) (*model.PaymentResponse, error) {
@@ -36,6 +42,40 @@ func (s *PaymentService) CreatePayment(order model.Order) (*model.PaymentRespons
 	for _, cartItem := range cart.Items {
 		item, _ := s.repoItem.GetItemByID(cartItem.ItemID)
 		amount = amount + float64(cartItem.Quantity*item.ActualPrice)
+	}
+
+	// Apply promocode if provided and valid
+	if order.Promocode != "" {
+		promoCode, err := s.repoPromoCode.GetPromoCodeByCode(order.Promocode)
+		if err != nil {
+			// Log the error, but potentially proceed without discount if code not found
+			fmt.Printf("Warning: Promocode '%s' not found or error fetching: %v\n", order.Promocode, err)
+		} else {
+			// Validate promocode
+			if promoCode.NumberOfUses <= 0 {
+				fmt.Printf("Info: Promocode '%s' has no uses left.\n", order.Promocode)
+			} else if time.Now().After(promoCode.EndDate) {
+				fmt.Printf("Info: Promocode '%s' has expired.\n", order.Promocode)
+			} else if amount < promoCode.MinAmount {
+				fmt.Printf("Info: Order amount %.2f is less than minimum %.2f for promocode '%s'.\n", amount, promoCode.MinAmount, order.Promocode)
+			} else {
+				// Calculate and apply discount
+				discount := amount * (promoCode.DiscountPercentage / 100.0)
+				if promoCode.MaxDiscount > 0 && discount > promoCode.MaxDiscount {
+					discount = promoCode.MaxDiscount
+				}
+				amount -= discount
+				fmt.Printf("Info: Applied discount %.2f using promocode '%s'. New amount: %.2f\n", discount, order.Promocode, amount)
+
+				// Decrement uses and update promocode
+				promoCode.NumberOfUses--
+				err = s.repoPromoCode.UpdatePromoCode(promoCode)
+				if err != nil {
+					// Log error, but proceed with payment creation
+					fmt.Printf("Error: Failed to update promocode '%s' uses: %v\n", order.Promocode, err)
+				}
+			}
+		}
 	}
 
 	paymentRequest := model.PaymentRequest{
