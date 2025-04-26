@@ -29,7 +29,7 @@ func NewOrderService(repoItem repository.Item, repoOrder repository.Order, repoS
 
 func (s *OrderService) ProcessOrder(order model.Order, paymentID string) error {
 	order.PaymentID = paymentID
-	order.Status = "Paid"
+	order.Status = "Not Paid"
 
 	cartItems, err := s.repoOrder.GetCartItemsByCartID(order.CartID)
 

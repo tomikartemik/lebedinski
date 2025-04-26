@@ -197,6 +197,7 @@ func (s *CdekService) CreateCdekOrder(cartIDStr string) (string, error) {
 	}
 
 	order.CdekOrderUUID = cdekResp.Entity.UUID
+	order.Status = "Paid"
 
 	err = s.repoOrder.UpdateOrder(order)
 
