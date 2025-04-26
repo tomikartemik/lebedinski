@@ -66,8 +66,6 @@ func (h *Handler) GetPvzList(c *gin.Context) {
 		"city_code":     cityCode,
 	}
 
-	log.Printf("Запрос списка ПВЗ СДЭК от фронтенда: страна=%s, код города=%s -> параметры для сервиса: %+v", country, cityCode, params)
-
 	pvzList, err := h.services.Cdek.GetPvzList(params)
 	if err != nil {
 		log.Printf("Ошибка получения списка ПВЗ из сервиса: %v", err)

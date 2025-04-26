@@ -55,5 +55,7 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 		h.services.SendOrderConfirmation(notification.Object.Description)
 	}
 
+	log.Printf(notification.Object.Status)
+
 	c.Status(http.StatusOK)
 }
