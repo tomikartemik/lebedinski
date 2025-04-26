@@ -27,7 +27,7 @@ func NewService(repos *repository.Repository) *Service {
 		Payment:   NewPaymentService(repos.Item, repos.Cart, repos.PromoCode),
 		Cart:      NewCartService(repos.Cart, repos.Item),
 		Cdek:      NewCdekService(repos.Item, repos.Order),
-		Order:     NewOrderService(repos.Item, repos.Order, repos.Size),
+		Order:     NewOrderService(repos.Item, repos.Order, repos.Size, repos.Cart),
 		PromoCode: NewPromoCodeService(repos.PromoCode),
 	}
 }
@@ -64,6 +64,7 @@ type Order interface {
 	ProcessOrder(order model.Order, paymentID string) error
 	GetAllOrders() ([]model.Order, error)
 	GetOrderByCartID(id int) (model.Order, error)
+	SendOrderConfirmation(cartIDStr string) error
 }
 
 type Payment interface {

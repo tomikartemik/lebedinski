@@ -11,8 +11,6 @@ import (
 	"os"
 )
 
-
-
 func (h *Handler) HandleWebhook(c *gin.Context) {
 
 	body, err := io.ReadAll(c.Request.Body)
@@ -54,6 +52,7 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 
 	if notification.Object.Status == "succeeded" {
 		h.services.CreateCdekOrder(notification.Object.Description)
+		h.services.SendOrderConfirmation(notification.Object.Description)
 	}
 
 	c.Status(http.StatusOK)
