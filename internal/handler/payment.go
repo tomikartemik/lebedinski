@@ -51,8 +51,15 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 	)
 
 	if notification.Object.Status == "succeeded" {
-		h.services.CreateCdekOrder(notification.Object.Description)
-		h.services.SendOrderConfirmation(notification.Object.Description)
+		_, err = h.services.CreateCdekOrder(notification.Object.Description)
+		if err != nil {
+			log.Println("Error creating cdek order:", err)
+		}
+
+		err = h.services.SendOrderConfirmation(notification.Object.Description)
+		if err != nil {
+			log.Println("Error sending order confirmation:", err)
+		}
 	}
 
 	log.Printf(notification.Object.Status)
