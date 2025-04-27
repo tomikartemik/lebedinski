@@ -30,7 +30,7 @@ func (s *CartService) CreateValidCart(items []model.CartItem) (int, error) {
 		}
 
 		for _, size := range item.Sizes {
-			if size.Size == ci.Size && size.Stock < ci.Quantity || item.CustomTailoring != true {
+			if size.Size == ci.Size && size.Stock < ci.Quantity && item.CustomTailoring != true {
 				return 0, fmt.Errorf("itemID: %d size: %s stock: %d", ci.ItemID, ci.Size, size.Stock)
 			}
 		}
