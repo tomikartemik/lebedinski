@@ -12,6 +12,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type CdekService struct {
@@ -73,9 +74,36 @@ func (s *CdekService) GetToken() (string, error) {
 	return tokenResp.AccessToken, nil
 }
 
+func (s *CdekService) getOrderNumberByUUID(uuid, token string) (string, error) {
+	client := resty.New()
+	resp, err := client.R().
+		SetHeader("Authorization", "Bearer "+token).
+		Get(fmt.Sprintf("https://api.cdek.ru/v2/orders/%s", uuid))
+
+	if err != nil {
+		return "", fmt.Errorf("failed to get order by UUID: %w", err)
+	}
+
+	if resp.StatusCode() != http.StatusOK {
+		return "", fmt.Errorf("CDEK order API error: Status %s, Body: %s", resp.Status(), resp.String())
+	}
+
+	var orderResp struct {
+		OrderNumber string `json:"order_number"`
+	}
+	if err := json.Unmarshal(resp.Body(), &orderResp); err != nil {
+		return "", fmt.Errorf("failed to unmarshal order response: %w. Body: %s", err, resp.String())
+	}
+
+	if orderResp.OrderNumber == "" {
+		return "", fmt.Errorf("empty order number in response: %s", resp.String())
+	}
+
+	return orderResp.OrderNumber, nil
+}
+
 func (s *CdekService) CreateCdekOrder(cartIDStr string) (string, error) {
 	cartID, err := strconv.Atoi(cartIDStr)
-
 	if err != nil {
 		return "", err
 	}
@@ -104,7 +132,6 @@ func (s *CdekService) CreateCdekOrder(cartIDStr string) (string, error) {
 		},
 		DeliveryPoint: order.PointCode,
 		ShipmentPoint: shipmentPoint,
-
 		Packages: []model.CdekPackage{
 			{
 				Number: fmt.Sprintf("%s-1", order.CartID),
@@ -196,18 +223,32 @@ func (s *CdekService) CreateCdekOrder(cartIDStr string) (string, error) {
 		return "", fmt.Errorf("CDEK response successful, but UUID is empty. Body: %s", resp.String())
 	}
 
-	fmt.Println(cdekResp)
+	// Получаем номер заказа по UUID
+	var orderNumber string
+	maxRetries := 5
+	for i := 0; i < maxRetries; i++ {
+		orderNumber, err = s.getOrderNumberByUUID(cdekResp.Entity.UUID, token)
+		if err == nil {
+			break
+		}
+		if i < maxRetries-1 {
+			time.Sleep(time.Second * time.Duration(i+1))
+		}
+	}
 
-	order.CdekOrderUUID = cdekResp.Entity.UUID
+	if err != nil {
+		return "", fmt.Errorf("failed to get order number after %d attempts: %w", maxRetries, err)
+	}
+
+	order.CdekOrderUUID = orderNumber
 	order.Status = "Paid"
 
 	err = s.repoOrder.UpdateOrder(order)
-
 	if err != nil {
 		return "", err
 	}
 
-	return cdekResp.Entity.UUID, nil
+	return orderNumber, nil
 }
 
 func (s *CdekService) GetPvzList(params map[string]string) ([]model.Pvz, error) {
