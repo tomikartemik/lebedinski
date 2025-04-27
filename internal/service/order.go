@@ -211,7 +211,7 @@ func (s *OrderService) SendOrderConfirmation(cartIDStr, total string) error {
                             </tbody>
                             <tfoot>
                                 <tr class="total">
-                                    <td colspan="3" style="text-align: right;">Итого:</td>
+                                    <td colspan="3" style="text-align: right;">Итого (с учетом скидок и доставки):</td>
                                     <td style="text-align: right;">%s руб.</td>
                                 </tr>
                             </tfoot>
