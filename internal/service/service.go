@@ -65,6 +65,7 @@ type Order interface {
 	GetAllOrders() ([]model.Order, error)
 	GetOrderByCartID(id int) (model.Order, error)
 	SendOrderConfirmation(cartIDStr, total string) error
+	SendOrderShippedNotification(cartIDStr string) error
 }
 
 type Payment interface {

@@ -161,6 +161,7 @@ func (s *OrderService) SendOrderConfirmation(cartIDStr, total string) error {
                 body { font-family: Arial, sans-serif; color: #333; line-height: 1.6; margin: 0; padding: 0; }
                 .container { max-width: 100%%; width: 600px; margin: 0 auto; padding: 0; }
                 .header { background-color: #000; color: white; padding: 30px 20px; text-align: center; }
+                .brand { font-size: 24px; font-weight: bold; letter-spacing: 2px; margin-bottom: 10px; }
                 .content { padding: 20px; background-color: #f9f9f9; }
                 table { width: 100%%; border-collapse: collapse; margin: 20px 0; }
                 th { background-color: #f2f2f2; padding: 12px 10px; text-align: left; }
@@ -175,17 +176,21 @@ func (s *OrderService) SendOrderConfirmation(cartIDStr, total string) error {
                     .container { width: 100%% !important; }
                     .header h2 { font-size: 20px; }
                     .info-block { padding: 15px; }
+                    .brand { font-size: 20px; }
                 }
             </style>
         </head>
         <body>
             <div class="container">
                 <div class="header">
+                    <div class="brand">LEBEDINSKI</div>
                     <h2>Ваш заказ #%d подтверждён</h2>
                 </div>
                 
                 <div class="content">
-                    <p style="font-size: 16px;">%s, спасибо за покупку в Lebedinski.shop!</p>
+                    <p style="font-size: 16px;">%s, благодарим Вас за покупку в LEBEDINSKI <br/>
+                    Ваш заказ успешно оформлен и будет отправлен в указанные на сайте сроки<br/><br/>
+                    Как только ваш заказ будет отправлен, пришлем вам сообщение об этом.<br/></p>
                     
                     <div class="info-block">
                         <div class="info-title">Детали заказа</div>
@@ -226,7 +231,7 @@ func (s *OrderService) SendOrderConfirmation(cartIDStr, total string) error {
                     </div>
                     
                     <div class="footer">
-                        <p>Если у вас есть вопросы, пожалуйста, напишите в телеграме @Art1eb.</p>
+                        <p>Если у вас есть вопросы, напишите в телеграме @Lebedinski_help.</p>
                         <p>&copy; %d Lebedinski.shop</p>
                     </div>
                 </div>
@@ -258,6 +263,93 @@ func (s *OrderService) SendOrderConfirmation(cartIDStr, total string) error {
 	err = smtp.SendMail(smtpHost+":"+smtpPort, auth, smtpUser, []string{order.Email}, msg)
 	if err != nil {
 		return fmt.Errorf("ошибка при отправке email: %v", err)
+	}
+	return nil
+}
+
+func (s *OrderService) SendOrderShippedNotification(cartIDStr string) error {
+	cartID, err := strconv.Atoi(cartIDStr)
+	if err != nil {
+		return err
+	}
+
+	order, err := s.repoOrder.GetOrderByCartID(cartID)
+	if err != nil {
+		return err
+	}
+
+	smtpHost := "smtp.gmail.com"
+	smtpPort := "587"
+	smtpUser := os.Getenv("SMTP_USER")
+	smtpPass := os.Getenv("SMTP_PASS")
+
+	auth := smtp.PlainAuth("", smtpUser, smtpPass, smtpHost)
+
+	header := fmt.Sprintf(
+		"To: %s\r\n"+
+			"From: %s\r\n"+
+			"Subject: Ваш заказ #%d отправлен\r\n"+
+			"MIME-Version: 1.0\r\n"+
+			"Content-Type: text/html; charset=\"UTF-8\"\r\n"+
+			"\r\n", order.Email, smtpUser, order.CartID)
+
+	body := fmt.Sprintf(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+                body { font-family: Arial, sans-serif; color: #333; line-height: 1.6; margin: 0; padding: 0; }
+                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                .header { background-color: #000; color: white; padding: 30px 20px; text-align: center; }
+                .brand { font-size: 24px; font-weight: bold; letter-spacing: 2px; margin-bottom: 10px; }
+                .content { padding: 20px; }
+                .tracking-number { font-size: 18px; font-weight: bold; margin: 20px 0; }
+                .tracking-link { color: #000; font-weight: bold; text-decoration: none; }
+                .footer { margin-top: 30px; font-size: 12px; color: #777; text-align: center; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <div class="brand">LEBEDINSKI</div>
+                    <h2>Ваш заказ #%d отправлен</h2>
+                </div>
+                
+                <div class="content">
+                    <p>%s, ваш заказ был передан в службу доставки СДЭК.</p>
+                    
+                    <div class="tracking-number">Номер для отслеживания: %s</div>
+                    
+                    <p>Отследить можно на сайте <a href="https://cdek.ru/tracking" class="tracking-link">СДЭК</a></p>
+                    
+                    <p>Если возникнут вопросы, пишите в телеграм: @Lebedinski_help</p>
+                </div>
+                
+                <div class="footer">
+                    <p>&copy; %d Lebedinski.shop</p>
+                </div>
+            </div>
+        </body>
+        </html>
+    `,
+		order.CartID,
+		order.FullName,
+		order.CdekOrderUUID,
+		time.Now().Year(),
+	)
+
+	msg := []byte(header + body)
+
+	err = smtp.SendMail(smtpHost+":"+smtpPort, auth, smtpUser, []string{order.Email}, msg)
+	if err != nil {
+		return fmt.Errorf("ошибка при отправке email: %v", err)
+	}
+
+	order.Status = "Sent"
+	err = s.repoOrder.UpdateOrder(order)
+	if err != nil {
+		return err
 	}
 	return nil
 }

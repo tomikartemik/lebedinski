@@ -30,3 +30,12 @@ func (h *Handler) GetOrderByCartID(c *gin.Context) {
 
 	c.JSON(http.StatusOK, order)
 }
+
+func (h *Handler) ChangeStatusToSent(c *gin.Context) {
+	cartID := c.Query("cart_id")
+
+	err := h.services.SendOrderShippedNotification(cartID)
+	if err != nil {
+		utils.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
+	}
+}
