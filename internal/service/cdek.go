@@ -196,7 +196,7 @@ func (s *CdekService) CreateCdekOrder(cartIDStr string) (string, error) {
 	var cdekResp struct {
 		Entity struct {
 			UUID       string `json:"uuid"`
-			CdekNumber string `json:"accompanying_number"`
+			CdekNumber string `json:"cdek_number"`
 			Number     string `json:"number"`
 		} `json:"entity"`
 		Requests []struct {

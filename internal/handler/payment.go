@@ -3,6 +3,7 @@ package handler
 import (
 	"crypto/hmac"
 	"crypto/sha256"
+	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"io"
 	"log"
@@ -32,6 +33,12 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 				Value string `json:"value"`
 			} `json:"amount"`
 		} `json:"object"`
+	}
+
+	if err := json.Unmarshal(body, &notification); err != nil {
+		log.Println("JSON parse error:", err)
+		c.Status(http.StatusBadRequest)
+		return
 	}
 
 	if notification.Object.Status == "succeeded" {
