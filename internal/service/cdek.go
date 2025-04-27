@@ -89,7 +89,7 @@ func (s *CdekService) getOrderNumberByUUID(uuid, token string) (string, error) {
 	}
 
 	var orderResp struct {
-		OrderNumber string `json:"order_number"`
+		OrderNumber string `json:"cdek_number"`
 	}
 	if err := json.Unmarshal(resp.Body(), &orderResp); err != nil {
 		return "", fmt.Errorf("failed to unmarshal order response: %w. Body: %s", err, resp.String())
@@ -223,7 +223,6 @@ func (s *CdekService) CreateCdekOrder(cartIDStr string) (string, error) {
 		return "", fmt.Errorf("CDEK response successful, but UUID is empty. Body: %s", resp.String())
 	}
 
-	// Получаем номер заказа по UUID
 	var orderNumber string
 	maxRetries := 5
 	for i := 0; i < maxRetries; i++ {
