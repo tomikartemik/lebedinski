@@ -12,18 +12,20 @@ import (
 )
 
 type OrderService struct {
-	repoItem  repository.Item
-	repoOrder repository.Order
-	repoSize  repository.Size
-	repoCart  repository.Cart
+	repoItem      repository.Item
+	repoOrder     repository.Order
+	repoSize      repository.Size
+	repoCart      repository.Cart
+	repoPromoCode repository.PromoCode
 }
 
-func NewOrderService(repoItem repository.Item, repoOrder repository.Order, repoSize repository.Size, repoCart repository.Cart) *OrderService {
+func NewOrderService(repoItem repository.Item, repoOrder repository.Order, repoSize repository.Size, repoCart repository.Cart, repoPromoCode repository.PromoCode) *OrderService {
 	return &OrderService{
-		repoItem:  repoItem,
-		repoOrder: repoOrder,
-		repoSize:  repoSize,
-		repoCart:  repoCart,
+		repoItem:      repoItem,
+		repoOrder:     repoOrder,
+		repoSize:      repoSize,
+		repoCart:      repoCart,
+		repoPromoCode: repoPromoCode,
 	}
 }
 
@@ -39,13 +41,6 @@ func (s *OrderService) ProcessOrder(order model.Order, paymentID string) error {
 
 	if len(cartItems) == 0 {
 		return fmt.Errorf("корзина с ID %d пуста или не найдена", order.CartID)
-	}
-
-	for _, item := range cartItems {
-		err := s.repoSize.DecreaseStock(item.ItemID, item.Size, item.Quantity)
-		if err != nil {
-			return fmt.Errorf("не удалось списать остаток для ItemID %d, Size %s: %w", item.ItemID, item.Size, err)
-		}
 	}
 
 	err = s.repoOrder.SaveOrder(order)
@@ -85,6 +80,24 @@ func (s *OrderService) SendOrderConfirmation(cartIDStr string) error {
 		return err
 	}
 
+	cartItems, err := s.repoOrder.GetCartItemsByCartID(order.CartID)
+	for _, item := range cartItems {
+		err := s.repoSize.DecreaseStock(item.ItemID, item.Size, item.Quantity)
+		if err != nil {
+			return fmt.Errorf("не удалось списать остаток для ItemID %d, Size %s: %w", item.ItemID, item.Size, err)
+		}
+	}
+
+	if order.Promocode != "" {
+		promoCode, err := s.repoPromoCode.GetPromoCodeByCode(order.Promocode)
+		promoCode.NumberOfUses--
+		err = s.repoPromoCode.UpdatePromoCode(promoCode)
+		if err != nil {
+			// Log error, but proceed with payment creation
+			fmt.Printf("Error: Failed to update promocode '%s' uses: %v\n", order.Promocode, err)
+		}
+	}
+
 	smtpHost := "smtp.gmail.com"
 	smtpPort := "587"
 	smtpUser := os.Getenv("SMTP_USER")
@@ -97,7 +110,6 @@ func (s *OrderService) SendOrderConfirmation(cartIDStr string) error {
 	total := 0
 
 	for _, cartItem := range cart.Items {
-		// Получаем полную информацию о товаре
 		item, err := s.repoItem.GetItemByID(cartItem.ItemID)
 		if err != nil {
 			return fmt.Errorf("не удалось получить информацию о товаре ID %d: %v", cartItem.ItemID, err)
@@ -108,25 +120,25 @@ func (s *OrderService) SendOrderConfirmation(cartIDStr string) error {
 
 		itemsHTML.WriteString(fmt.Sprintf(`
         <tr>
-            <td style="padding: 10px; border-bottom: 1px solid #eee;">%s</td>
-            <td style="padding: 10px; border-bottom: 1px solid #eee;">%s</td>
+            <td style="padding: 10px; border-bottom: 1px solid #eee; word-break: break-word;">%s<br><span style="color: #777;">%s</span></td>
             <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: center;">%d</td>
             <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">%d руб.</td>
             <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">%d руб.</td>
         </tr>`,
-			item.Name,         // Название товара из Item
-			cartItem.Size,     // Размер из CartItem
-			cartItem.Quantity, // Количество из CartItem
-			item.ActualPrice,  // Цена из Item
-			itemTotal,         // Итоговая сумма за позицию
+			item.Name,
+			cartItem.Size,
+			cartItem.Quantity,
+			item.ActualPrice,
+			itemTotal,
 		))
 	}
+
 	// Если есть промокод, добавляем скидку
 	discountHTML := ""
 	if order.Promocode != "" {
 		discountHTML = fmt.Sprintf(`
             <tr>
-                <td colspan="4" style="padding: 10px; text-align: right; font-weight: bold;">Промокод "%s"</td>
+                <td colspan="3" style="padding: 10px; text-align: right; font-weight: bold;">Промокод "%s"</td>
                 <td style="padding: 10px; text-align: right;">-%%s руб.</td>
             </tr>`, order.Promocode)
 	}
@@ -145,17 +157,26 @@ func (s *OrderService) SendOrderConfirmation(cartIDStr string) error {
         <!DOCTYPE html>
         <html>
         <head>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <style>
-                body { font-family: Arial, sans-serif; color: #333; line-height: 1.6; }
-                .container { max-width: 800px; margin: 0 auto; padding: 20px; }
-                .header { background-color: #000; color: white; padding: 20px; text-align: center; }
+                body { font-family: Arial, sans-serif; color: #333; line-height: 1.6; margin: 0; padding: 0; }
+                .container { max-width: 100%%; width: 600px; margin: 0 auto; padding: 0; }
+                .header { background-color: #000; color: white; padding: 30px 20px; text-align: center; }
                 .content { padding: 20px; background-color: #f9f9f9; }
                 table { width: 100%%; border-collapse: collapse; margin: 20px 0; }
-                th { background-color: #f2f2f2; padding: 10px; text-align: left; }
+                th { background-color: #f2f2f2; padding: 12px 10px; text-align: left; }
+                td { padding: 10px; border-bottom: 1px solid #eee; }
                 .total { font-weight: bold; font-size: 18px; }
                 .footer { margin-top: 30px; font-size: 12px; color: #777; text-align: center; }
-                .info-block { background: white; padding: 15px; margin-bottom: 20px; border-radius: 5px; }
-                .info-title { font-weight: bold; margin-bottom: 5px; }
+                .info-block { background: white; padding: 20px; margin-bottom: 20px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+                .info-title { font-weight: bold; margin-bottom: 10px; font-size: 16px; color: #000; }
+                
+                @media only screen and (max-width: 480px) {
+                    table { width: 100%%; display: block; overflow-x: auto; }
+                    .container { width: 100%% !important; }
+                    .header h2 { font-size: 20px; }
+                    .info-block { padding: 15px; }
+                }
             </style>
         </head>
         <body>
@@ -165,45 +186,45 @@ func (s *OrderService) SendOrderConfirmation(cartIDStr string) error {
                 </div>
                 
                 <div class="content">
-                    <p>Уважаемый(ая) %s, спасибо за ваш заказ!</p>
+                    <p style="font-size: 16px;">%s, спасибо за покупку в Lebedinski.shop!</p>
                     
                     <div class="info-block">
-                        <div class="info-title">Информация о заказе:</div>
-                        <p>Номер заказа: #%d</p>
-                        <p>Код отслеживания СДЭК: %s</p>
-                        <p>Статус заказа: %s</p>
+                        <div class="info-title">Детали заказа</div>
+                        <p><strong>Номер заказа:</strong> #%d</p>
+                        <p><strong>Код отслеживания:</strong> %s</p>
+                        <p><strong>Статус:</strong> %s</p>
                     </div>
                     
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Товар</th>
-                                <th>Размер</th>
-                                <th>Кол-во</th>
-                                <th>Цена</th>
-                                <th>Сумма</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            %s
-                            %s
-                        </tbody>
-                        <tfoot>
-                            <tr class="total">
-                                <td colspan="4" style="text-align: right;">Итого:</td>
-                                <td style="text-align: right;">%d руб.</td>
-                            </tr>
-                        </tfoot>
-                    </table>
+                    <div class="info-block">
+                        <div class="info-title">Состав заказа</div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th style="width: 50%%;">Товар</th>
+                                    <th style="text-align: center;">Кол-во</th>
+                                    <th style="text-align: right;">Цена</th>
+                                    <th style="text-align: right;">Сумма</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                %s
+                                %s
+                            </tbody>
+                            <tfoot>
+                                <tr class="total">
+                                    <td colspan="3" style="text-align: right;">Итого:</td>
+                                    <td style="text-align: right;">%d руб.</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
                     
                     <div class="info-block">
-                        <div class="info-title">Информация о доставке:</div>
-                        <p>Пункт выдачи: %s</p>
-                        <p>Телефон для связи: %s</p>
+                        <div class="info-title">Доставка</div>
+                        <p><strong>Пункт выдачи:</strong> %s</p>
+                        <p><strong>Телефон:</strong> %s</p>
                         %s
                     </div>
-                    
-                    <p>Мы свяжемся с вами для уточнения деталей. Вы можете отслеживать статус заказа в личном кабинете.</p>
                     
                     <div class="footer">
                         <p>Если у вас есть вопросы, пожалуйста, ответьте на это письмо.</p>
@@ -226,7 +247,7 @@ func (s *OrderService) SendOrderConfirmation(cartIDStr string) error {
 		order.Phone,
 		func() string {
 			if order.AdditionalInfo != "" {
-				return fmt.Sprintf("<p>Дополнительная информация: %s</p>", order.AdditionalInfo)
+				return fmt.Sprintf("<p><strong>Дополнительно:</strong> %s</p>", order.AdditionalInfo)
 			}
 			return ""
 		}(),
@@ -239,6 +260,5 @@ func (s *OrderService) SendOrderConfirmation(cartIDStr string) error {
 	if err != nil {
 		return fmt.Errorf("ошибка при отправке email: %v", err)
 	}
-
 	return nil
 }

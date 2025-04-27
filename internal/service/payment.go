@@ -37,21 +37,18 @@ func (s *PaymentService) CreatePayment(order model.Order) (*model.PaymentRespons
 		return nil, err
 	}
 
-	amount := 500.0
+	amount := 0.0
 
 	for _, cartItem := range cart.Items {
 		item, _ := s.repoItem.GetItemByID(cartItem.ItemID)
 		amount = amount + float64(cartItem.Quantity*item.ActualPrice)
 	}
 
-	// Apply promocode if provided and valid
 	if order.Promocode != "" {
 		promoCode, err := s.repoPromoCode.GetPromoCodeByCode(order.Promocode)
 		if err != nil {
-			// Log the error, but potentially proceed without discount if code not found
 			fmt.Printf("Warning: Promocode '%s' not found or error fetching: %v\n", order.Promocode, err)
 		} else {
-			// Validate promocode
 			if promoCode.NumberOfUses <= 0 {
 				fmt.Printf("Info: Promocode '%s' has no uses left.\n", order.Promocode)
 			} else if time.Now().After(promoCode.EndDate) {
@@ -59,23 +56,18 @@ func (s *PaymentService) CreatePayment(order model.Order) (*model.PaymentRespons
 			} else if amount < promoCode.MinAmount {
 				fmt.Printf("Info: Order amount %.2f is less than minimum %.2f for promocode '%s'.\n", amount, promoCode.MinAmount, order.Promocode)
 			} else {
-				// Calculate and apply discount
 				discount := amount * (promoCode.DiscountPercentage / 100.0)
 				if promoCode.MaxDiscount > 0 && discount > promoCode.MaxDiscount {
 					discount = promoCode.MaxDiscount
 				}
 				amount -= discount
 				fmt.Printf("Info: Applied discount %.2f using promocode '%s'. New amount: %.2f\n", discount, order.Promocode, amount)
-
-				// Decrement uses and update promocode
-				promoCode.NumberOfUses--
-				err = s.repoPromoCode.UpdatePromoCode(promoCode)
-				if err != nil {
-					// Log error, but proceed with payment creation
-					fmt.Printf("Error: Failed to update promocode '%s' uses: %v\n", order.Promocode, err)
-				}
 			}
 		}
+	}
+
+	if amount < 15000.0 {
+		amount += 350
 	}
 
 	paymentRequest := model.PaymentRequest{
