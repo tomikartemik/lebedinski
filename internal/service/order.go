@@ -81,10 +81,16 @@ func (s *OrderService) SendOrderConfirmation(cartIDStr string) error {
 	}
 
 	cartItems, err := s.repoOrder.GetCartItemsByCartID(order.CartID)
-	for _, item := range cartItems {
-		err := s.repoSize.DecreaseStock(item.ItemID, item.Size, item.Quantity)
+	for _, cartItem := range cartItems {
+		item, err := s.repoItem.GetItemByID(cartItem.ItemID)
 		if err != nil {
-			return fmt.Errorf("не удалось списать остаток для ItemID %d, Size %s: %w", item.ItemID, item.Size, err)
+			return err
+		}
+		if item.CustomTailoring == false {
+			err := s.repoSize.DecreaseStock(cartItem.ItemID, cartItem.Size, cartItem.Quantity)
+			if err != nil {
+				return fmt.Errorf("не удалось списать остаток для ItemID %d, Size %s: %w", cartItem.ItemID, cartItem.Size, err)
+			}
 		}
 	}
 

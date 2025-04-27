@@ -59,9 +59,6 @@ func (s *ItemService) UpdateItem(itemIDStr string, updateData map[string]interfa
 		return err
 	}
 
-	// Опционально: здесь можно добавить валидацию данных в updateData,
-	// например, пересчет скидки, если меняется цена.
-
 	return s.repo.UpdateItem(itemID, updateData)
 }
 
@@ -71,20 +68,17 @@ func (s *ItemService) DeleteItem(itemIDStr string) error {
 		return err
 	}
 
-	// Получаем информацию о товаре для удаления фотографий
 	item, err := s.repo.GetItemByID(itemID)
 	if err != nil {
 		return err
 	}
 
-	// Удаляем все фотографии товара с сервера
 	for _, photo := range item.Photos {
 		if err := os.Remove(photo.Link); err != nil {
 			return err
 		}
 	}
 
-	// Удаляем товар и связанные данные из базы
 	return s.repo.DeleteItem(itemID)
 }
 
