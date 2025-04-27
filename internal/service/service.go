@@ -64,7 +64,7 @@ type Order interface {
 	ProcessOrder(order model.Order, paymentID string) error
 	GetAllOrders() ([]model.Order, error)
 	GetOrderByCartID(id int) (model.Order, error)
-	SendOrderConfirmation(cartIDStr string) error
+	SendOrderConfirmation(cartIDStr, amount string) error
 }
 
 type Payment interface {

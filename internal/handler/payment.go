@@ -43,7 +43,7 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 
 	if notification.Object.Status == "succeeded" {
 		h.services.CreateCdekOrder(notification.Object.Description)
-		h.services.SendOrderConfirmation(notification.Object.Description)
+		h.services.SendOrderConfirmation(notification.Object.Description, notification.Object.Amount.Value)
 	}
 
 	c.Status(http.StatusOK)
