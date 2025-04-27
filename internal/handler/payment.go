@@ -3,7 +3,6 @@ package handler
 import (
 	"crypto/hmac"
 	"crypto/sha256"
-	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"io"
 	"log"
@@ -35,27 +34,10 @@ func (h *Handler) HandleWebhook(c *gin.Context) {
 		} `json:"object"`
 	}
 
-	if err := json.Unmarshal(body, &notification); err != nil {
-		log.Println("JSON parse error:", err)
-		c.Status(http.StatusBadRequest)
-		return
-	}
-
-	log.Printf(
-		"Webhook received: Event=%s, ID=%s, Status=%s, Amount=%s, Description=%s",
-		notification.Event,
-		notification.Object.ID,
-		notification.Object.Status,
-		notification.Object.Amount.Value,
-		notification.Object.Description,
-	)
-
 	if notification.Object.Status == "succeeded" {
-		go h.services.CreateCdekOrder(notification.Object.Description)
-		go h.services.SendOrderConfirmation(notification.Object.Description)
+		h.services.CreateCdekOrder(notification.Object.Description)
+		h.services.SendOrderConfirmation(notification.Object.Description)
 	}
-
-	log.Printf(notification.Object.Status)
 
 	c.Status(http.StatusOK)
 }

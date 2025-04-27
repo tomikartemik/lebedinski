@@ -99,7 +99,6 @@ func (s *OrderService) SendOrderConfirmation(cartIDStr string) error {
 		promoCode.NumberOfUses--
 		err = s.repoPromoCode.UpdatePromoCode(promoCode)
 		if err != nil {
-			// Log error, but proceed with payment creation
 			fmt.Printf("Error: Failed to update promocode '%s' uses: %v\n", order.Promocode, err)
 		}
 	}
@@ -111,7 +110,6 @@ func (s *OrderService) SendOrderConfirmation(cartIDStr string) error {
 
 	auth := smtp.PlainAuth("", smtpUser, smtpPass, smtpHost)
 
-	// Подготовка данных о товарах
 	var itemsHTML strings.Builder
 	total := 0
 
@@ -139,7 +137,6 @@ func (s *OrderService) SendOrderConfirmation(cartIDStr string) error {
 		))
 	}
 
-	// Если есть промокод, добавляем скидку
 	discountHTML := ""
 	if order.Promocode != "" {
 		discountHTML = fmt.Sprintf(`
@@ -149,7 +146,6 @@ func (s *OrderService) SendOrderConfirmation(cartIDStr string) error {
             </tr>`, order.Promocode)
 	}
 
-	// MIME-заголовки для HTML-письма
 	header := fmt.Sprintf(
 		"To: %s\r\n"+
 			"From: %s\r\n"+
@@ -158,7 +154,6 @@ func (s *OrderService) SendOrderConfirmation(cartIDStr string) error {
 			"Content-Type: text/html; charset=\"UTF-8\"\r\n"+
 			"\r\n", order.Email, smtpUser, order.CartID)
 
-	// HTML-тело письма
 	body := fmt.Sprintf(`
         <!DOCTYPE html>
         <html>
@@ -233,7 +228,7 @@ func (s *OrderService) SendOrderConfirmation(cartIDStr string) error {
                     </div>
                     
                     <div class="footer">
-                        <p>Если у вас есть вопросы, пожалуйста, ответьте на это письмо.</p>
+                        <p>Если у вас есть вопросы, пожалуйста, напишите в телеграме @Art1eb.</p>
                         <p>&copy; %d Lebedinski.shop</p>
                     </div>
                 </div>
