@@ -64,7 +64,7 @@ func (s *OrderService) GetOrderByCartID(id int) (model.Order, error) {
 	return order, nil
 }
 
-func (s *OrderService) SendOrderConfirmation(cartIDStr, totalStr string) error {
+func (s *OrderService) SendOrderConfirmation(cartIDStr, total string) error {
 	cartID, err := strconv.Atoi(cartIDStr)
 	if err != nil {
 		return err
@@ -111,10 +111,6 @@ func (s *OrderService) SendOrderConfirmation(cartIDStr, totalStr string) error {
 	auth := smtp.PlainAuth("", smtpUser, smtpPass, smtpHost)
 
 	var itemsHTML strings.Builder
-	total, err := strconv.Atoi(totalStr)
-	if err != nil {
-		total = 0
-	}
 
 	for _, cartItem := range cart.Items {
 		item, err := s.repoItem.GetItemByID(cartItem.ItemID)
@@ -216,7 +212,7 @@ func (s *OrderService) SendOrderConfirmation(cartIDStr, totalStr string) error {
                             <tfoot>
                                 <tr class="total">
                                     <td colspan="3" style="text-align: right;">Итого:</td>
-                                    <td style="text-align: right;">%d руб.</td>
+                                    <td style="text-align: right;">%s руб.</td>
                                 </tr>
                             </tfoot>
                         </table>
