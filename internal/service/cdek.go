@@ -89,17 +89,19 @@ func (s *CdekService) getOrderNumberByUUID(uuid, token string) (string, error) {
 	}
 
 	var orderResp struct {
-		OrderNumber string `json:"cdek_number"`
+		Entity struct {
+			CdekNumber string `json:"cdek_number"`
+		} `json:"entity"`
 	}
 	if err := json.Unmarshal(resp.Body(), &orderResp); err != nil {
 		return "", fmt.Errorf("failed to unmarshal order response: %w. Body: %s", err, resp.String())
 	}
 
-	if orderResp.OrderNumber == "" {
+	if orderResp.Entity.CdekNumber == "" {
 		return "", fmt.Errorf("empty order number in response: %s", resp.String())
 	}
 
-	return orderResp.OrderNumber, nil
+	return orderResp.Entity.CdekNumber, nil
 }
 
 func (s *CdekService) CreateCdekOrder(cartIDStr string) (string, error) {
