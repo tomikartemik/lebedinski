@@ -285,6 +285,8 @@ func (s *OrderService) SendOrderShippedNotification(cartIDStr string) error {
 
 	auth := smtp.PlainAuth("", smtpUser, smtpPass, smtpHost)
 
+	trackingURL := fmt.Sprintf("https://www.cdek.ru/ru/tracking/?order_id=%s", order.CdekOrderUUID)
+
 	header := fmt.Sprintf(
 		"To: %s\r\n"+
 			"From: %s\r\n"+
@@ -305,7 +307,16 @@ func (s *OrderService) SendOrderShippedNotification(cartIDStr string) error {
                 .brand { font-size: 24px; font-weight: bold; letter-spacing: 2px; margin-bottom: 10px; }
                 .content { padding: 20px; }
                 .tracking-number { font-size: 18px; font-weight: bold; margin: 20px 0; }
-                .tracking-link { color: #000; font-weight: bold; text-decoration: none; }
+                .tracking-btn { 
+                    display: inline-block; 
+                    padding: 12px 24px; 
+                    background-color: #000; 
+                    color: white; 
+                    text-decoration: none; 
+                    border-radius: 4px; 
+                    font-weight: bold;
+                    margin: 15px 0;
+                }
                 .footer { margin-top: 30px; font-size: 12px; color: #777; text-align: center; }
             </style>
         </head>
@@ -321,7 +332,7 @@ func (s *OrderService) SendOrderShippedNotification(cartIDStr string) error {
                     
                     <div class="tracking-number">Номер для отслеживания: %s</div>
                     
-                    <p>Отследить можно на сайте <a href="https://cdek.ru/tracking" class="tracking-link">СДЭК</a></p>
+                    <a href="%s" class="tracking-btn">Отследить заказ</a>
                     
                     <p>Если возникнут вопросы, пишите в телеграм: @Lebedinski_help</p>
                 </div>
@@ -336,6 +347,7 @@ func (s *OrderService) SendOrderShippedNotification(cartIDStr string) error {
 		order.CartID,
 		order.FullName,
 		order.CdekOrderUUID,
+		trackingURL,
 		time.Now().Year(),
 	)
 
@@ -344,12 +356,6 @@ func (s *OrderService) SendOrderShippedNotification(cartIDStr string) error {
 	err = smtp.SendMail(smtpHost+":"+smtpPort, auth, smtpUser, []string{order.Email}, msg)
 	if err != nil {
 		return fmt.Errorf("ошибка при отправке email: %v", err)
-	}
-
-	order.Status = "Sent"
-	err = s.repoOrder.UpdateOrder(order)
-	if err != nil {
-		return err
 	}
 	return nil
 }
