@@ -18,12 +18,6 @@ func (h *Handler) CreateOrder(c *gin.Context) {
 		return
 	}
 
-	//cdekUUID, err := h.services.CreateCdekOrder(order)
-	//if err != nil {
-	//	utils.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
-	//	return
-	//}
-
 	fmt.Println(order)
 	paymentResponse, err := h.services.CreatePayment(order)
 	if err != nil {

@@ -6,6 +6,7 @@ import (
 	"lebedinski/internal/repository"
 	"net/smtp"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -52,7 +53,17 @@ func (s *OrderService) ProcessOrder(order model.Order, paymentID string) error {
 }
 
 func (s *OrderService) GetAllOrders() ([]model.Order, error) {
-	return s.repoOrder.GetAllOrders()
+	orders, err := s.repoOrder.GetAllOrders()
+	if err != nil {
+		return nil, err
+	}
+
+	// Сортировка по CartID в обратном порядке (по убыванию)
+	sort.Slice(orders, func(i, j int) bool {
+		return orders[i].CartID > orders[j].CartID
+	})
+
+	return orders, nil
 }
 
 func (s *OrderService) GetOrderByCartID(id int) (model.Order, error) {
