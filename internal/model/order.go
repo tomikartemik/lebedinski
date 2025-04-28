@@ -1,17 +1,20 @@
 package model
 
+import "time"
+
 type Order struct {
-	CartID         int    `gorm:"not null" json:"cart_id"`
-	FullName       string `gorm:"not null" json:"full_name"`
-	Email          string `gorm:"not null" json:"email"`
-	Phone          string `gorm:"not null" json:"phone"`
-	AdditionalInfo string `json:"additional_info"`
-	PointCode      string `gorm:"not null" json:"point_code"`
-	Promocode      string `json:"promocode"`
-	Status         string `gorm:"default:'created';not null"`
-	PaymentID      string `json:"payment_id"`
-	TelegramID     string `gorm:"not null" json:"telegram_id"`
-	CdekOrderUUID  string `json:"cdek_order_uuid"`
+	CartID         int       `gorm:"not null" json:"cart_id"`
+	FullName       string    `gorm:"not null" json:"full_name"`
+	Email          string    `gorm:"not null" json:"email"`
+	Phone          string    `gorm:"not null" json:"phone"`
+	AdditionalInfo string    `json:"additional_info"`
+	PointCode      string    `gorm:"not null" json:"point_code"`
+	Promocode      string    `json:"promocode"`
+	Status         string    `gorm:"default:'created';not null"`
+	PaymentID      string    `json:"payment_id"`
+	TelegramID     string    `gorm:"not null" json:"telegram_id"`
+	DateTime       time.Time `json:"date_time"`
+	CdekOrderUUID  string    `json:"cdek_order_uuid"`
 }
 
 type CdekOrderRequest struct {

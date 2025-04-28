@@ -32,6 +32,7 @@ func NewOrderService(repoItem repository.Item, repoOrder repository.Order, repoS
 func (s *OrderService) ProcessOrder(order model.Order, paymentID string) error {
 	order.PaymentID = paymentID
 	order.Status = "Not Paid"
+	order.DateTime = time.Now()
 
 	cartItems, err := s.repoOrder.GetCartItemsByCartID(order.CartID)
 
@@ -358,4 +359,8 @@ func (s *OrderService) SendOrderShippedNotification(cartIDStr string) error {
 		return fmt.Errorf("ошибка при отправке email: %v", err)
 	}
 	return nil
+}
+
+func (s *OrderService) DeleteOrder(cartID int) error {
+	return s.repoOrder.DeleteOrder(cartID)
 }

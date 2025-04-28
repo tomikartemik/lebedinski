@@ -45,3 +45,7 @@ func (r *OrderRepository) GetOrderByCartID(id int) (model.Order, error) {
 func (r *OrderRepository) UpdateOrder(order model.Order) error {
 	return r.db.Where("cart_id = ?", order.CartID).Updates(order).Error
 }
+
+func (r *OrderRepository) DeleteOrder(cartID int) error {
+	return r.db.Delete(&model.Order{}, "cart_id = ?", cartID).Error
+}

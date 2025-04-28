@@ -85,6 +85,7 @@ func (h *Handler) InitRoutes() *gin.Engine {
 		order.GET("/all", h.GetAllOrders)
 		order.GET("/by-cart-id", h.GetCartById)
 		order.POST("/status", h.ChangeStatusToSent)
+		order.DELETE("", h.DeleteOrder)
 	}
 
 	cdek := router.Group("cdek")

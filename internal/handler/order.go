@@ -39,3 +39,17 @@ func (h *Handler) ChangeStatusToSent(c *gin.Context) {
 		utils.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
 	}
 }
+
+func (h *Handler) DeleteOrder(c *gin.Context) {
+	id, err := strconv.Atoi(c.Query("cart_id"))
+	if err != nil {
+		utils.NewErrorResponse(c, http.StatusBadRequest, err.Error())
+	}
+
+	err = h.services.DeleteOrder(id)
+	if err != nil {
+		utils.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
+	}
+
+	c.JSON(http.StatusOK, "Deleted!")
+}

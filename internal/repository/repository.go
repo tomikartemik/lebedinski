@@ -68,6 +68,7 @@ type Order interface {
 	GetAllOrders() ([]model.Order, error)
 	GetOrderByCartID(id int) (model.Order, error)
 	UpdateOrder(order model.Order) error
+	DeleteOrder(cartID int) error
 }
 
 type PromoCode interface {
