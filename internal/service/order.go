@@ -279,6 +279,12 @@ func (s *OrderService) SendOrderShippedNotification(cartIDStr string) error {
 		return err
 	}
 
+	order.Status = "Sent"
+	err = s.repoOrder.UpdateOrder(order)
+	if err != nil {
+		return err
+	}
+
 	smtpHost := "smtp.gmail.com"
 	smtpPort := "587"
 	smtpUser := os.Getenv("SMTP_USER")
