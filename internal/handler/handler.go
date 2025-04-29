@@ -71,6 +71,7 @@ func (h *Handler) InitRoutes() *gin.Engine {
 	payment := router.Group("payment")
 	{
 		payment.POST("/response", h.HandleWebhook)
+		payment.POST("/send-message-if-failed", h.SendMessageIfFailed)
 	}
 
 	cart := router.Group("cart")

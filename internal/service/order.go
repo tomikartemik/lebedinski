@@ -108,10 +108,12 @@ func (s *OrderService) SendOrderConfirmation(cartIDStr, total string) error {
 
 	if order.Promocode != "" {
 		promoCode, err := s.repoPromoCode.GetPromoCodeByCode(order.Promocode)
-		promoCode.NumberOfUses--
-		err = s.repoPromoCode.UpdatePromoCode(promoCode)
-		if err != nil {
-			fmt.Printf("Error: Failed to update promocode '%s' uses: %v\n", order.Promocode, err)
+		if err == nil {
+			promoCode.NumberOfUses--
+			err = s.repoPromoCode.UpdatePromoCode(promoCode)
+			if err != nil {
+				fmt.Printf("Error: Failed to update promocode '%s' uses: %v\n", order.Promocode, err)
+			}
 		}
 	}
 
