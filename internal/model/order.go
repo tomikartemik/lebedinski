@@ -11,7 +11,7 @@ type Order struct {
 	PointCode      string    `gorm:"not null" json:"point_code"`
 	Promocode      string    `json:"promocode"`
 	Status         string    `gorm:"default:'created';not null"`
-	PaymentID      string    `gorm:"primaryKey" json:"payment_id"`
+	PaymentID      string    `gorm:"primaryKey;uniqueIndex" json:"payment_id"`
 	TelegramID     string    `json:"telegram_id"`
 	DateTime       time.Time `json:"date_time"`
 	CdekOrderUUID  string    `json:"cdek_order_uuid"`
