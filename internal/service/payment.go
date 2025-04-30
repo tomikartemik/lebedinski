@@ -67,7 +67,7 @@ func (s *PaymentService) CreatePayment(order model.Order) (*model.PaymentRespons
 	}
 
 	if amount < 15000.0 {
-		amount += 350
+		amount += 450
 	}
 
 	paymentRequest := model.PaymentRequest{
