@@ -383,3 +383,7 @@ func (s *OrderService) SendOrderShippedNotification(cartIDStr string) error {
 func (s *OrderService) DeleteOrder(cartID int) error {
 	return s.repoOrder.DeleteOrder(cartID)
 }
+
+func (s *OrderService) UpdateOrder(order model.Order) error {
+	return s.repoOrder.UpdateOrder(order)
+}

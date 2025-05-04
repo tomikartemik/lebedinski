@@ -2,6 +2,7 @@ package handler
 
 import (
 	"github.com/gin-gonic/gin"
+	"lebedinski/internal/model"
 	"lebedinski/internal/utils"
 	"net/http"
 	"strconv"
@@ -52,4 +53,19 @@ func (h *Handler) DeleteOrder(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, "Deleted!")
+}
+
+func (h *Handler) UpdateOrder(c *gin.Context) {
+	order := model.Order{}
+	err := c.ShouldBindJSON(&order)
+	if err != nil {
+		utils.NewErrorResponse(c, http.StatusBadRequest, err.Error())
+	}
+
+	err = h.services.UpdateOrder(order)
+	if err != nil {
+		utils.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
+	}
+
+	c.JSON(http.StatusOK, order)
 }
