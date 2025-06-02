@@ -86,7 +86,7 @@ func (h *Handler) InitRoutes() *gin.Engine {
 		order.GET("/all", h.GetAllOrders)
 		order.GET("/by-cart-id", h.GetCartById)
 		order.POST("/status", h.ChangeStatusToSent)
-		order.PUT("/sent", h.ChangeStatusToSent)
+		order.POST("/sent", h.ChangeStatusToSent)
 		order.POST("/new-status", h.NewStatus)
 		order.PUT("", h.UpdateOrder)
 		order.DELETE("", h.DeleteOrder)
