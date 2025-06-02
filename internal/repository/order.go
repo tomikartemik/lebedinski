@@ -49,3 +49,7 @@ func (r *OrderRepository) UpdateOrder(order model.Order) error {
 func (r *OrderRepository) DeleteOrder(cartID int) error {
 	return r.db.Delete(&model.Order{}, "cart_id = ?", cartID).Error
 }
+
+func (r *OrderRepository) ChangeStatus(orderID int, status string) error {
+	return r.db.Model(&model.Order{}).Where("id = ?", orderID).Update("status", status).Error
+}

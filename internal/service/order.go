@@ -387,3 +387,7 @@ func (s *OrderService) DeleteOrder(cartID int) error {
 func (s *OrderService) UpdateOrder(order model.Order) error {
 	return s.repoOrder.UpdateOrder(order)
 }
+
+func (s *OrderService) ChangeStatus(orderID int, status string) error {
+	return s.repoOrder.ChangeStatus(orderID, status)
+}
