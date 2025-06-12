@@ -1,6 +1,7 @@
 package service
 
 import (
+	"crypto/tls"
 	"fmt"
 	"lebedinski/internal/model"
 	"lebedinski/internal/repository"
@@ -299,11 +300,11 @@ func (s *OrderService) SendOrderShippedNotification(cartIDStr string) error {
 	}
 
 	smtpHost := "smtp.gmail.com"
-	smtpPort := "587"
+	smtpPort := "465"
 	smtpUser := os.Getenv("SMTP_USER")
 	smtpPass := os.Getenv("SMTP_PASS")
 
-	auth := smtp.PlainAuth("", smtpUser, smtpPass, smtpHost)
+	//auth := smtp.PlainAuth("", smtpUser, smtpPass, smtpHost)
 
 	trackingURL := fmt.Sprintf("https://www.cdek.ru/ru/tracking/?order_id=%s", order.CdekOrderUUID)
 
@@ -371,9 +372,7 @@ func (s *OrderService) SendOrderShippedNotification(cartIDStr string) error {
 		time.Now().Year(),
 	)
 
-	msg := []byte(header + body)
-
-	err = smtp.SendMail(smtpHost+":"+smtpPort, auth, smtpUser, []string{order.Email}, msg)
+	err = sendEmailWithTLS(smtpHost, smtpPort, smtpUser, smtpPass, order.Email, header, body)
 	if err != nil {
 		return fmt.Errorf("ошибка при отправке email: %v", err)
 	}
@@ -390,4 +389,59 @@ func (s *OrderService) UpdateOrder(order model.Order) error {
 
 func (s *OrderService) ChangeStatus(orderID int, status string) error {
 	return s.repoOrder.ChangeStatus(orderID, status)
+}
+
+func sendEmailWithTLS(smtpHost, smtpPort, smtpUser, smtpPass, toEmail, header, body string) error {
+	// Настройка TLS
+	tlsConfig := &tls.Config{
+		ServerName: smtpHost,
+	}
+
+	// Установка соединения
+	conn, err := tls.Dial("tcp", smtpHost+":"+smtpPort, tlsConfig)
+	if err != nil {
+		return fmt.Errorf("ошибка подключения к SMTP: %v", err)
+	}
+	defer conn.Close()
+
+	// Создание SMTP-клиента
+	client, err := smtp.NewClient(conn, smtpHost)
+	if err != nil {
+		return fmt.Errorf("ошибка создания SMTP-клиента: %v", err)
+	}
+	defer client.Close()
+
+	// Аутентификация
+	auth := smtp.PlainAuth("", smtpUser, smtpPass, smtpHost)
+	if err = client.Auth(auth); err != nil {
+		return fmt.Errorf("ошибка аутентификации: %v", err)
+	}
+
+	// Установка отправителя
+	if err = client.Mail(smtpUser); err != nil {
+		return fmt.Errorf("ошибка установки отправителя: %v", err)
+	}
+
+	// Установка получателя
+	if err = client.Rcpt(toEmail); err != nil {
+		return fmt.Errorf("ошибка установки получателя: %v", err)
+	}
+
+	// Отправка данных письма
+	writer, err := client.Data()
+	if err != nil {
+		return fmt.Errorf("ошибка открытия потока данных: %v", err)
+	}
+
+	_, err = writer.Write([]byte(header + body))
+	if err != nil {
+		return fmt.Errorf("ошибка записи данных письма: %v", err)
+	}
+
+	err = writer.Close()
+	if err != nil {
+		return fmt.Errorf("ошибка закрытия потока данных: %v", err)
+	}
+
+	return client.Quit()
 }
