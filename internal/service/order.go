@@ -377,6 +377,7 @@ func (s *OrderService) SendOrderShippedNotification(cartIDStr string) error {
 
 	err = smtp.SendMail(smtpHost+":"+smtpPort, auth, smtpUser, []string{order.Email}, msg)
 	if err != nil {
+		fmt.Println(err)
 		return fmt.Errorf("ошибка при отправке email: %v", err)
 	}
 	return nil
