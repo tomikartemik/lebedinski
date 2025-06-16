@@ -1,11 +1,9 @@
 package service
 
 import (
-	"crypto/tls"
 	"fmt"
 	"lebedinski/internal/model"
 	"lebedinski/internal/repository"
-	"net/mail"
 	"net/smtp"
 	"os"
 	"sort"
@@ -278,41 +276,39 @@ func (s *OrderService) SendOrderConfirmation(cartIDStr, total string) error {
 
 	err = smtp.SendMail(smtpHost+":"+smtpPort, auth, smtpUser, []string{order.Email}, msg)
 	if err != nil {
+		fmt.Println(err)
 		return fmt.Errorf("ошибка при отправке email: %v", err)
 	}
+
 	return nil
 }
 
 func (s *OrderService) SendOrderShippedNotification(cartIDStr string) error {
 	cartID, err := strconv.Atoi(cartIDStr)
 	if err != nil {
-		return fmt.Errorf("неверный ID корзины: %v", err)
+		return err
 	}
 
 	order, err := s.repoOrder.GetOrderByCartID(cartID)
 	if err != nil {
-		return fmt.Errorf("ошибка получения заказа: %v", err)
+		return err
 	}
 
-	// Валидация email
-	if !isValidEmail(order.Email) {
-		return fmt.Errorf("некорректный email адрес: %s", order.Email)
-	}
-
-	// Обновление статуса
 	order.Status = "Sent"
-	if err := s.repoOrder.UpdateOrder(order); err != nil {
-		return fmt.Errorf("ошибка обновления статуса: %v", err)
+	err = s.repoOrder.UpdateOrder(order)
+	if err != nil {
+		return err
 	}
 
-	// Настройки SMTP для Mail.ru
-	smtpHost := "smtp.mail.ru"
-	smtpPort := "465"
-	smtpUser := os.Getenv("MAILRU_USER")
-	smtpPass := os.Getenv("MAILRU_PASS")
+	smtpHost := "smtp.gmail.com"
+	smtpPort := "587"
+	smtpUser := os.Getenv("SMTP_USER")
+	smtpPass := os.Getenv("SMTP_PASS")
 
-	// Генерация HTML письма
+	auth := smtp.PlainAuth("", smtpUser, smtpPass, smtpHost)
+
 	trackingURL := fmt.Sprintf("https://www.cdek.ru/ru/tracking/?order_id=%s", order.CdekOrderUUID)
+
 	header := fmt.Sprintf(
 		"To: %s\r\n"+
 			"From: %s\r\n"+
@@ -377,18 +373,11 @@ func (s *OrderService) SendOrderShippedNotification(cartIDStr string) error {
 		time.Now().Year(),
 	)
 
-	err = sendMailWithTLS(
-		smtpHost,
-		smtpPort,
-		smtpUser,
-		smtpPass,
-		order.Email,
-		header,
-		body,
-	)
+	msg := []byte(header + body)
 
+	err = smtp.SendMail(smtpHost+":"+smtpPort, auth, smtpUser, []string{order.Email}, msg)
 	if err != nil {
-		return fmt.Errorf("ошибка отправки уведомления: %v", err)
+		return fmt.Errorf("ошибка при отправке email: %v", err)
 	}
 	return nil
 }
@@ -403,57 +392,4 @@ func (s *OrderService) UpdateOrder(order model.Order) error {
 
 func (s *OrderService) ChangeStatus(orderID int, status string) error {
 	return s.repoOrder.ChangeStatus(orderID, status)
-}
-
-func isValidEmail(email string) bool {
-	_, err := mail.ParseAddress(email)
-	return err == nil
-}
-
-func sendMailWithTLS(host, port, username, password, to, header, body string) error {
-	// Настройка TLS
-	tlsConfig := &tls.Config{
-		ServerName: host,
-	}
-
-	// Установка соединения
-	conn, err := tls.Dial("tcp", host+":"+port, tlsConfig)
-	if err != nil {
-		return fmt.Errorf("ошибка подключения к SMTP: %v", err)
-	}
-	defer conn.Close()
-
-	// Создание клиента
-	client, err := smtp.NewClient(conn, host)
-	if err != nil {
-		return fmt.Errorf("ошибка создания SMTP клиента: %v", err)
-	}
-	defer client.Close()
-
-	// Аутентификация
-	auth := smtp.PlainAuth("", username, password, host)
-	if err := client.Auth(auth); err != nil {
-		return fmt.Errorf("ошибка аутентификации: %v", err)
-	}
-
-	// Установка отправителя и получателя
-	if err := client.Mail(username); err != nil {
-		return fmt.Errorf("ошибка установки отправителя: %v", err)
-	}
-	if err := client.Rcpt(to); err != nil {
-		return fmt.Errorf("ошибка установки получателя: %v", err)
-	}
-
-	// Отправка данных
-	w, err := client.Data()
-	if err != nil {
-		return fmt.Errorf("ошибка подготовки письма: %v", err)
-	}
-	defer w.Close()
-
-	if _, err := fmt.Fprintf(w, "%s%s", header, body); err != nil {
-		return fmt.Errorf("ошибка записи письма: %v", err)
-	}
-
-	return client.Quit()
 }
