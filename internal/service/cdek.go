@@ -136,7 +136,7 @@ func (s *CdekService) CreateCdekOrder(cartIDStr string) (string, error) {
 		ShipmentPoint: shipmentPoint,
 		Packages: []model.CdekPackage{
 			{
-				Number: fmt.Sprintf("%s-1", order.CartID),
+				Number: fmt.Sprint(order.CartID),
 				Weight: 1000,
 				Length: 10,
 				Width:  10,
