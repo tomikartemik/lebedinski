@@ -143,8 +143,8 @@ func (s *CdekService) CreateCdekOrder(cartIDStr string) (string, error) {
 				Height: 10,
 				Items: []model.CdekPackageItem{
 					{
-						Name:    "Пример товара",
-						WareKey: "ART-001",
+						Name:    "Сумка LEBEDINSKI",
+						WareKey: "LEB-001",
 						Payment: model.CdekPayment{
 							Value: 0,
 						},
