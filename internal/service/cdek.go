@@ -115,7 +115,6 @@ func (s *CdekService) CreateCdekOrder(cartIDStr string) (string, error) {
 		return "", err
 	}
 
-	// Получаем товары из корзины
 	cartItems, err := s.repoOrder.GetCartItemsByCartID(order.CartID)
 	if err != nil {
 		return "", fmt.Errorf("не удалось получить товары для CartID %d: %w", order.CartID, err)
@@ -125,13 +124,11 @@ func (s *CdekService) CreateCdekOrder(cartIDStr string) (string, error) {
 		return "", fmt.Errorf("корзина с ID %d пуста или не найдена", order.CartID)
 	}
 
-	// Формируем WareKey из ID товаров и получаем названия товаров
 	var itemIDs []string
 	var itemNames []string
 	for _, cartItem := range cartItems {
 		itemIDs = append(itemIDs, strconv.Itoa(cartItem.ItemID))
-		
-		// Получаем название товара
+
 		item, err := s.repoItem.GetItemByID(cartItem.ItemID)
 		if err != nil {
 			return "", fmt.Errorf("не удалось получить информацию о товаре ID %d: %w", cartItem.ItemID, err)
@@ -149,7 +146,7 @@ func (s *CdekService) CreateCdekOrder(cartIDStr string) (string, error) {
 	shipmentPoint := os.Getenv("SHIPMENT_POINT")
 
 	cdekReq := model.CdekOrderRequest{
-		Number:     fmt.Sprint(order.CartID),
+		Number:     fmt.Sprintf("lebedinski № %d", order.CartID),
 		TariffCode: 136,
 		Recipient: model.CdekRecipient{
 			Name: order.FullName,
@@ -162,7 +159,7 @@ func (s *CdekService) CreateCdekOrder(cartIDStr string) (string, error) {
 		ShipmentPoint: shipmentPoint,
 		Packages: []model.CdekPackage{
 			{
-				Number: fmt.Sprintf("Товар lebedinski № %d", order.CartID),
+				Number: fmt.Sprint(order.CartID),
 				Weight: 1000,
 				Length: 10,
 				Width:  10,
