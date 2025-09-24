@@ -115,6 +115,32 @@ func (s *CdekService) CreateCdekOrder(cartIDStr string) (string, error) {
 		return "", err
 	}
 
+	// Получаем товары из корзины
+	cartItems, err := s.repoOrder.GetCartItemsByCartID(order.CartID)
+	if err != nil {
+		return "", fmt.Errorf("не удалось получить товары для CartID %d: %w", order.CartID, err)
+	}
+
+	if len(cartItems) == 0 {
+		return "", fmt.Errorf("корзина с ID %d пуста или не найдена", order.CartID)
+	}
+
+	// Формируем WareKey из ID товаров и получаем названия товаров
+	var itemIDs []string
+	var itemNames []string
+	for _, cartItem := range cartItems {
+		itemIDs = append(itemIDs, strconv.Itoa(cartItem.ItemID))
+		
+		// Получаем название товара
+		item, err := s.repoItem.GetItemByID(cartItem.ItemID)
+		if err != nil {
+			return "", fmt.Errorf("не удалось получить информацию о товаре ID %d: %w", cartItem.ItemID, err)
+		}
+		itemNames = append(itemNames, item.Name)
+	}
+	wareKey := strings.Join(itemIDs, ",")
+	itemNamesStr := strings.Join(itemNames, ", ")
+
 	token, err := s.GetToken()
 	if err != nil {
 		return "", fmt.Errorf("failed to get CDEK token: %w", err)
@@ -143,8 +169,8 @@ func (s *CdekService) CreateCdekOrder(cartIDStr string) (string, error) {
 				Height: 10,
 				Items: []model.CdekPackageItem{
 					{
-						Name:    "Сумка LEBEDINSKI",
-						WareKey: "LEB-001",
+						Name:    itemNamesStr,
+						WareKey: wareKey,
 						Payment: model.CdekPayment{
 							Value: 0,
 						},
