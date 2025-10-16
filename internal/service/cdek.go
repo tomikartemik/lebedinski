@@ -1,6 +1,7 @@
 package service
 
 import (
+	"crypto/rand"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -8,6 +9,7 @@ import (
 	"lebedinski/internal/model"
 	"lebedinski/internal/repository"
 	"log"
+	"math/big"
 	"net/http"
 	"os"
 	"strconv"
@@ -159,7 +161,7 @@ func (s *CdekService) CreateCdekOrder(cartIDStr string) (string, error) {
 		ShipmentPoint: shipmentPoint,
 		Packages: []model.CdekPackage{
 			{
-				Number: fmt.Sprint(order.CartID),
+				Number: fmt.Sprintf("%d000%05d", order.CartID, func() int64 { n, _ := rand.Int(rand.Reader, big.NewInt(100000)); return n.Int64() }()),
 				Weight: 1000,
 				Length: 10,
 				Width:  10,
