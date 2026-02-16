@@ -9,6 +9,7 @@ type Order struct {
 	Phone          string    `gorm:"not null" json:"phone"`
 	AdditionalInfo string    `json:"additional_info"`
 	PointCode      string    `gorm:"not null" json:"point_code"`
+	DeliveryCity   string    `json:"delivery_city"`
 	Promocode      string    `json:"promocode"`
 	Status         string    `gorm:"default:'created';not null"`
 	Archive        bool      `gorm:"default:false" json:"archive"`
