@@ -32,6 +32,7 @@ type Item interface {
 	GetAllItems() ([]model.Item, error)
 	GetItemByID(id int) (model.Item, error)
 	UpdateItem(itemID int, updateData map[string]interface{}) error
+	UpdateItemCategories(itemID int, categoryIDs []int) error
 	DeleteItem(itemID int) error
 	GetTopItems() ([]model.Top, error)
 	ChangeTopItem(position, itemID int) error

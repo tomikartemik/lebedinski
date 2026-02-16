@@ -59,7 +59,32 @@ func (s *ItemService) UpdateItem(itemIDStr string, updateData map[string]interfa
 		return err
 	}
 
-	return s.repo.UpdateItem(itemID, updateData)
+	// Handle category_ids if present
+	if categoryIDs, ok := updateData["category_ids"]; ok {
+		delete(updateData, "category_ids")
+		if ids, ok := categoryIDs.([]interface{}); ok {
+			var intIDs []int
+			for _, id := range ids {
+				switch v := id.(type) {
+				case float64:
+					intIDs = append(intIDs, int(v))
+				case int:
+					intIDs = append(intIDs, v)
+				}
+			}
+			if err := s.repo.UpdateItemCategories(itemID, intIDs); err != nil {
+				return err
+			}
+		}
+	}
+
+	// Remove categories from update data as they're handled via associations
+	delete(updateData, "categories")
+
+	if len(updateData) > 0 {
+		return s.repo.UpdateItem(itemID, updateData)
+	}
+	return nil
 }
 
 func (s *ItemService) DeleteItem(itemIDStr string) error {

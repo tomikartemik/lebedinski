@@ -23,7 +23,7 @@ func (r *ItemRepository) CreateItem(item model.Item) (int, error) {
 
 func (r *ItemRepository) GetAllItems() ([]model.Item, error) {
 	var items []model.Item
-	if err := r.db.Preload("Category").Preload("Photos").Preload("Sizes").Find(&items).Error; err != nil {
+	if err := r.db.Preload("Category").Preload("Categories").Preload("Photos").Preload("Sizes").Find(&items).Error; err != nil {
 		return nil, err
 	}
 	return items, nil
@@ -31,10 +31,24 @@ func (r *ItemRepository) GetAllItems() ([]model.Item, error) {
 
 func (r *ItemRepository) GetItemByID(id int) (model.Item, error) {
 	var item model.Item
-	if err := r.db.Where("id = ?", id).Preload("Category").Preload("Photos").Preload("Sizes").Find(&item).Error; err != nil {
+	if err := r.db.Where("id = ?", id).Preload("Category").Preload("Categories").Preload("Photos").Preload("Sizes").Find(&item).Error; err != nil {
 		return item, err
 	}
 	return item, nil
+}
+
+func (r *ItemRepository) UpdateItemCategories(itemID int, categoryIDs []int) error {
+	var item model.Item
+	item.ID = itemID
+
+	var categories []model.Category
+	if len(categoryIDs) > 0 {
+		if err := r.db.Where("id IN ?", categoryIDs).Find(&categories).Error; err != nil {
+			return err
+		}
+	}
+
+	return r.db.Model(&item).Association("Categories").Replace(categories)
 }
 
 func (r *ItemRepository) UpdateItem(itemID int, updateData map[string]interface{}) error {
@@ -63,6 +77,12 @@ func (r *ItemRepository) DeleteItem(itemID int) error {
 
 	// Удаляем все фотографии товара из базы данных
 	if err := tx.Where("item_id = ?", itemID).Delete(&model.Photo{}).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// Удаляем связи с категориями
+	if err := tx.Model(&item).Association("Categories").Clear(); err != nil {
 		tx.Rollback()
 		return err
 	}

@@ -12,6 +12,7 @@ type Order struct {
 	Promocode      string    `json:"promocode"`
 	Status         string    `gorm:"default:'created';not null"`
 	Archive        bool      `gorm:"default:false" json:"archive"`
+	Marked         bool      `gorm:"default:false" json:"marked"`
 	PaymentID      string    `gorm:"primaryKey;uniqueIndex" json:"payment_id"`
 	TelegramID     string    `json:"telegram_id"`
 	DateTime       time.Time `json:"date_time"`
