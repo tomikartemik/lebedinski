@@ -32,11 +32,13 @@ func (h *Handler) GetCartById(c *gin.Context) {
 
 	if err != nil {
 		utils.NewErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
 	}
 
 	cart, err := h.services.GetCartByID(id)
 	if err != nil {
 		utils.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
 	}
 
 	c.JSON(http.StatusOK, cart)

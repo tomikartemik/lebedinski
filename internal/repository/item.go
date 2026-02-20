@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"fmt"
 	"gorm.io/gorm"
 	"lebedinski/internal/model"
 )
@@ -41,10 +42,27 @@ func (r *ItemRepository) UpdateItemCategories(itemID int, categoryIDs []int) err
 	var item model.Item
 	item.ID = itemID
 
+	uniqueCategoryIDs := make(map[int]struct{}, len(categoryIDs))
+	normalizedCategoryIDs := make([]int, 0, len(categoryIDs))
+	for _, categoryID := range categoryIDs {
+		if categoryID <= 0 {
+			return fmt.Errorf("category_ids must contain positive ids")
+		}
+		if _, exists := uniqueCategoryIDs[categoryID]; exists {
+			continue
+		}
+		uniqueCategoryIDs[categoryID] = struct{}{}
+		normalizedCategoryIDs = append(normalizedCategoryIDs, categoryID)
+	}
+
 	var categories []model.Category
-	if len(categoryIDs) > 0 {
-		if err := r.db.Where("id IN ?", categoryIDs).Find(&categories).Error; err != nil {
+	if len(normalizedCategoryIDs) > 0 {
+		if err := r.db.Where("id IN ?", normalizedCategoryIDs).Find(&categories).Error; err != nil {
 			return err
+		}
+
+		if len(categories) != len(normalizedCategoryIDs) {
+			return fmt.Errorf("one or more category_ids do not exist")
 		}
 	}
 
@@ -52,7 +70,42 @@ func (r *ItemRepository) UpdateItemCategories(itemID int, categoryIDs []int) err
 }
 
 func (r *ItemRepository) UpdateItem(itemID int, updateData map[string]interface{}) error {
+	if rawCategoryID, ok := updateData["category_id"]; ok {
+		categoryID, err := parseCategoryID(rawCategoryID)
+		if err != nil {
+			return err
+		}
+
+		var count int64
+		if err := r.db.Model(&model.Category{}).Where("id = ?", categoryID).Count(&count).Error; err != nil {
+			return err
+		}
+		if count == 0 {
+			return fmt.Errorf("category_id %d does not exist", categoryID)
+		}
+
+		updateData["category_id"] = categoryID
+	}
+
 	return r.db.Model(&model.Item{}).Where("id = ?", itemID).Updates(updateData).Error
+}
+
+func parseCategoryID(raw interface{}) (int, error) {
+	switch v := raw.(type) {
+	case int:
+		if v <= 0 {
+			return 0, fmt.Errorf("category_id must be positive")
+		}
+		return v, nil
+	case float64:
+		categoryID := int(v)
+		if categoryID <= 0 {
+			return 0, fmt.Errorf("category_id must be positive")
+		}
+		return categoryID, nil
+	default:
+		return 0, fmt.Errorf("category_id must be a number")
+	}
 }
 
 func (r *ItemRepository) DeleteItem(itemID int) error {

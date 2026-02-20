@@ -18,6 +18,7 @@ func (h *Handler) CreatePromoCode(c *gin.Context) {
 	err := h.services.CreatePromoCode(promocode)
 	if err != nil {
 		utils.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
 	}
 
 	c.JSON(http.StatusOK, "Promocode successfully added")
@@ -73,12 +74,14 @@ func (h *Handler) UpdatePromocode(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&promocode); err != nil {
 		utils.NewErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
 	}
 
 	err := h.services.UpdatePromoCode(promocode)
 
 	if err != nil {
 		utils.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
 	}
 
 	c.JSON(http.StatusOK, "Promocode successfully updated")

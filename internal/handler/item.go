@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"lebedinski/internal/model"
 	"lebedinski/internal/utils"
@@ -8,17 +9,29 @@ import (
 	"strconv"
 )
 
-func (h *Handler) CreateItem(c *gin.Context) {
-	var item model.Item
+type createItemRequest struct {
+	model.Item
+	CategoryIDs []int `json:"category_ids"`
+}
 
-	if err := c.ShouldBindJSON(&item); err != nil {
+func (h *Handler) CreateItem(c *gin.Context) {
+	var req createItemRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.NewErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	itemID, err := h.services.CreateItem(item)
+	itemID, err := h.services.CreateItem(req.Item)
 	if err != nil {
 		utils.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	if len(req.CategoryIDs) > 0 {
+		if err := h.services.UpdateItemCategories(itemID, req.CategoryIDs); err != nil {
+			fmt.Printf("Warning: Failed to set categories for item %d: %v\n", itemID, err)
+		}
 	}
 
 	c.JSON(http.StatusOK, itemID)
@@ -28,6 +41,7 @@ func (h *Handler) AllItems(c *gin.Context) {
 	items, err := h.services.GetAllItems()
 	if err != nil {
 		utils.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
 	}
 	c.JSON(http.StatusOK, items)
 }
@@ -39,6 +53,7 @@ func (h *Handler) ItemByID(c *gin.Context) {
 
 	if err != nil {
 		utils.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
 	}
 
 	c.JSON(http.StatusOK, item)
@@ -63,6 +78,7 @@ func (h *Handler) UpdateItem(c *gin.Context) {
 
 	if err := h.services.UpdateItem(id, updateData); err != nil {
 		utils.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
 	}
 
 	c.JSON(http.StatusOK, model.SuccessResponse{Message: "Item updated!"})
@@ -88,6 +104,7 @@ func (h *Handler) GetTopItems(c *gin.Context) {
 
 	if err != nil {
 		utils.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
 	}
 
 	c.JSON(http.StatusOK, items)
@@ -99,6 +116,7 @@ func (h *Handler) ChangeTopItem(c *gin.Context) {
 
 	if err != nil {
 		utils.NewErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
 	}
 
 	itemIDStr := c.Query("item_id")
@@ -106,12 +124,14 @@ func (h *Handler) ChangeTopItem(c *gin.Context) {
 
 	if err != nil {
 		utils.NewErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
 	}
 
 	err = h.services.ChangeTopItem(position, itemID)
 
 	if err != nil {
 		utils.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
 	}
 
 	c.JSON(http.StatusOK, model.SuccessResponse{Message: "Item changed successfully!"})

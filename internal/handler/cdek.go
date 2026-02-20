@@ -29,6 +29,7 @@ func (h *Handler) CreateOrder(c *gin.Context) {
 
 	if err != nil {
 		utils.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
 	}
 
 	c.JSON(http.StatusCreated, gin.H{

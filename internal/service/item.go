@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"lebedinski/internal/model"
 	"lebedinski/internal/repository"
 	"lebedinski/internal/utils"
@@ -62,29 +63,55 @@ func (s *ItemService) UpdateItem(itemIDStr string, updateData map[string]interfa
 	// Handle category_ids if present
 	if categoryIDs, ok := updateData["category_ids"]; ok {
 		delete(updateData, "category_ids")
-		if ids, ok := categoryIDs.([]interface{}); ok {
-			var intIDs []int
-			for _, id := range ids {
-				switch v := id.(type) {
-				case float64:
-					intIDs = append(intIDs, int(v))
-				case int:
-					intIDs = append(intIDs, v)
-				}
-			}
-			if err := s.repo.UpdateItemCategories(itemID, intIDs); err != nil {
-				return err
-			}
+		intIDs, err := parseCategoryIDs(categoryIDs)
+		if err != nil {
+			return err
+		}
+
+		if err := s.repo.UpdateItemCategories(itemID, intIDs); err != nil {
+			return err
+		}
+
+		// Keep the primary category in sync with the many-to-many relation.
+		if len(intIDs) > 0 {
+			updateData["category_id"] = intIDs[0]
 		}
 	}
 
 	// Remove categories from update data as they're handled via associations
+	delete(updateData, "category")
 	delete(updateData, "categories")
 
 	if len(updateData) > 0 {
 		return s.repo.UpdateItem(itemID, updateData)
 	}
 	return nil
+}
+
+func parseCategoryIDs(raw interface{}) ([]int, error) {
+	switch v := raw.(type) {
+	case []int:
+		return v, nil
+	case []interface{}:
+		result := make([]int, 0, len(v))
+		for _, id := range v {
+			switch typedID := id.(type) {
+			case float64:
+				result = append(result, int(typedID))
+			case int:
+				result = append(result, typedID)
+			default:
+				return nil, fmt.Errorf("category_ids must contain only numbers")
+			}
+		}
+		return result, nil
+	default:
+		return nil, fmt.Errorf("category_ids must be an array of numbers")
+	}
+}
+
+func (s *ItemService) UpdateItemCategories(itemID int, categoryIDs []int) error {
+	return s.repo.UpdateItemCategories(itemID, categoryIDs)
 }
 
 func (s *ItemService) DeleteItem(itemIDStr string) error {

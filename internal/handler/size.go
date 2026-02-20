@@ -18,6 +18,7 @@ func (h *Handler) AddNewSizes(c *gin.Context) {
 	err := h.services.AddNewSizes(sizes)
 	if err != nil {
 		utils.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
 	}
 
 	c.JSON(http.StatusOK, "Size successfully added")
@@ -42,6 +43,7 @@ func (h *Handler) UpdateSize(c *gin.Context) {
 
 	if err := h.services.UpdateSize(id, updateData); err != nil {
 		utils.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
 	}
 
 	c.JSON(http.StatusOK, model.SuccessResponse{Message: "Size updated!"})
@@ -53,6 +55,7 @@ func (h *Handler) DeleteSize(c *gin.Context) {
 
 	if err != nil {
 		utils.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
 	}
 
 	c.JSON(http.StatusOK, "Size successfully deleted")

@@ -18,6 +18,7 @@ func (h *Handler) AddNewCategory(c *gin.Context) {
 	err := h.services.AddCategory(category)
 	if err != nil {
 		utils.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
 	}
 
 	c.JSON(http.StatusOK, "Category successfully added")
@@ -27,6 +28,7 @@ func (h *Handler) GetAllCategorise(c *gin.Context) {
 	categories, err := h.services.GetAllCategories()
 	if err != nil {
 		utils.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
 	}
 	c.JSON(http.StatusOK, categories)
 }
@@ -36,12 +38,14 @@ func (h *Handler) UpdateCategory(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&category); err != nil {
 		utils.NewErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
 	}
 
 	err := h.services.UpdateCategory(category)
 
 	if err != nil {
 		utils.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
 	}
 
 	c.JSON(http.StatusOK, "Category successfully updated")
@@ -49,11 +53,16 @@ func (h *Handler) UpdateCategory(c *gin.Context) {
 
 func (h *Handler) DeleteCategory(c *gin.Context) {
 	id := c.Query("id")
+	if id == "" {
+		utils.NewErrorResponse(c, http.StatusBadRequest, "id is required")
+		return
+	}
 
 	err := h.services.DeleteCategory(id)
 
 	if err != nil {
 		utils.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
 	}
 
 	c.JSON(http.StatusOK, "Category successfully deleted")
