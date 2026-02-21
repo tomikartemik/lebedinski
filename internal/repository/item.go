@@ -39,8 +39,10 @@ func (r *ItemRepository) GetItemByID(id int) (model.Item, error) {
 }
 
 func (r *ItemRepository) UpdateItemCategories(itemID int, categoryIDs []int) error {
-	var item model.Item
-	item.ID = itemID
+	tx := r.db.Begin()
+	if tx.Error != nil {
+		return tx.Error
+	}
 
 	uniqueCategoryIDs := make(map[int]struct{}, len(categoryIDs))
 	normalizedCategoryIDs := make([]int, 0, len(categoryIDs))
@@ -57,16 +59,29 @@ func (r *ItemRepository) UpdateItemCategories(itemID int, categoryIDs []int) err
 
 	var categories []model.Category
 	if len(normalizedCategoryIDs) > 0 {
-		if err := r.db.Where("id IN ?", normalizedCategoryIDs).Find(&categories).Error; err != nil {
+		if err := tx.Where("id IN ?", normalizedCategoryIDs).Find(&categories).Error; err != nil {
+			tx.Rollback()
 			return err
 		}
 
 		if len(categories) != len(normalizedCategoryIDs) {
+			tx.Rollback()
 			return fmt.Errorf("one or more category_ids do not exist")
 		}
 	}
 
-	return r.db.Model(&item).Association("Categories").Replace(categories)
+	var item model.Item
+	if err := tx.Where("id = ?", itemID).First(&item).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if err := tx.Model(&item).Association("Categories").Replace(categories); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return tx.Commit().Error
 }
 
 func (r *ItemRepository) UpdateItem(itemID int, updateData map[string]interface{}) error {
