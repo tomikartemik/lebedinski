@@ -5,6 +5,7 @@ import (
 	"lebedinski/internal/model"
 	"lebedinski/internal/repository"
 	"lebedinski/internal/utils"
+	"math"
 	"os"
 	"sort"
 	"strconv"
@@ -19,8 +20,20 @@ func NewItemService(repo repository.Item) *ItemService {
 }
 
 func (s *ItemService) CreateItem(item model.Item) (int, error) {
-	item.Discount = (1 - int(item.ActualPrice/item.Price)) * 100
+	item, _ = s.applyDiscount(item)
 	return s.repo.CreateItem(item)
+}
+
+// applyDiscount sets item.Discount as the percentage saved off the original
+// ActualPrice given the discounted Price. Returns 0 when there is no genuine
+// discount (no original price, or Price >= ActualPrice).
+func (s *ItemService) applyDiscount(item model.Item) (model.Item, int) {
+	if item.ActualPrice > 0 && item.Price < item.ActualPrice {
+		item.Discount = int(math.Round((1 - float64(item.Price)/float64(item.ActualPrice)) * 100))
+	} else {
+		item.Discount = 0
+	}
+	return item, item.Discount
 }
 
 func (s *ItemService) GetAllItems() ([]model.ItemShortInfo, error) {

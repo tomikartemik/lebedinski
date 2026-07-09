@@ -68,3 +68,23 @@ func (r *OrderRepository) DeleteOrder(cartID int) error {
 func (r *OrderRepository) ChangeStatus(orderID int, status string) error {
 	return r.db.Model(&model.Order{}).Where("id = ?", orderID).Update("status", status).Error
 }
+
+// SetStatusByCartID sets an order's status, keyed by its CartID.
+func (r *OrderRepository) SetStatusByCartID(cartID int, status string) error {
+	return r.db.Model(&model.Order{}).Where("cart_id = ?", cartID).Update("status", status).Error
+}
+
+// ClaimOrderForProcessing atomically transitions an order into the "Processing"
+// state, but only if it has not already been paid or claimed. It returns true
+// only for the single caller that wins the claim; concurrent/duplicate webhook
+// deliveries get false and must skip processing. This closes the race where two
+// webhooks both read a not-yet-paid order before either marks it done.
+func (r *OrderRepository) ClaimOrderForProcessing(cartID int) (bool, error) {
+	res := r.db.Model(&model.Order{}).
+		Where("cart_id = ? AND status NOT IN ?", cartID, []string{"Processing", "Paid", "Sent"}).
+		Update("status", "Processing")
+	if res.Error != nil {
+		return false, res.Error
+	}
+	return res.RowsAffected > 0, nil
+}

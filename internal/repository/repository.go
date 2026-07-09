@@ -71,6 +71,8 @@ type Order interface {
 	UpdateOrder(order model.Order) error
 	DeleteOrder(cartID int) error
 	ChangeStatus(orderID int, status string) error
+	ClaimOrderForProcessing(cartID int) (bool, error)
+	SetStatusByCartID(cartID int, status string) error
 }
 
 type PromoCode interface {
