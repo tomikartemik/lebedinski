@@ -132,7 +132,7 @@ func (s *OrderService) SendOrderConfirmation(cartIDStr, total string) error {
 			return fmt.Errorf("не удалось получить информацию о товаре ID %d: %v", cartItem.ItemID, err)
 		}
 
-		itemTotal := cartItem.Quantity * item.ActualPrice
+		itemTotal := cartItem.Quantity * item.Price
 
 		itemsHTML.WriteString(fmt.Sprintf(`
         <tr>
@@ -144,7 +144,7 @@ func (s *OrderService) SendOrderConfirmation(cartIDStr, total string) error {
 			item.Name,
 			cartItem.Size,
 			cartItem.Quantity,
-			item.ActualPrice,
+			item.Price,
 			itemTotal,
 		))
 	}

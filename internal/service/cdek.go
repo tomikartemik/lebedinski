@@ -106,24 +106,54 @@ func (s *CdekService) getOrderNumberByUUID(uuid, token string) (string, error) {
 	return orderResp.Entity.CdekNumber, nil
 }
 
-func (s *CdekService) CreateCdekOrder(cartIDStr string) (string, error) {
+// CreateCdekOrder creates the CDEK shipment for a paid order exactly once.
+// created reports whether this call actually processed the order (won the
+// idempotency claim); duplicate webhook deliveries return created=false so the
+// caller can skip follow-up side effects like the confirmation email.
+func (s *CdekService) CreateCdekOrder(cartIDStr string) (orderNum string, created bool, err error) {
 	cartID, err := strconv.Atoi(cartIDStr)
 	if err != nil {
-		return "", err
+		return "", false, err
 	}
 
 	order, err := s.repoOrder.GetOrderByCartID(cartID)
 	if err != nil {
-		return "", err
+		return "", false, err
 	}
+
+	// Idempotency guard: YooKassa delivers webhooks at-least-once and retries on
+	// any non-2xx/timeout, and two endpoints (/response and /send-message-if-failed)
+	// run this same success path — so the same payment can arrive several times.
+	// Atomically claim the order; only the first caller proceeds, the rest bail
+	// out. This prevents the duplicated orders seen in admin.
+	claimed, err := s.repoOrder.ClaimOrderForProcessing(cartID)
+	if err != nil {
+		return "", false, fmt.Errorf("не удалось захватить заказ CartID %d: %w", cartID, err)
+	}
+	if !claimed {
+		log.Printf("CreateCdekOrder: заказ CartID %d уже обрабатывается или обработан (status=%s), пропускаем", cartID, order.Status)
+		return order.CdekOrderUUID, false, nil
+	}
+
+	// If we claimed the order but then fail before it is marked "Paid", release
+	// the claim (back to "Not Paid") so a later webhook retry can process it —
+	// otherwise the order would be stuck in "Processing" forever.
+	previousStatus := order.Status
+	defer func() {
+		if err != nil {
+			if rerr := s.repoOrder.SetStatusByCartID(cartID, previousStatus); rerr != nil {
+				log.Printf("CreateCdekOrder: не удалось освободить заказ CartID %d после ошибки: %v", cartID, rerr)
+			}
+		}
+	}()
 
 	cartItems, err := s.repoOrder.GetCartItemsByCartID(order.CartID)
 	if err != nil {
-		return "", fmt.Errorf("не удалось получить товары для CartID %d: %w", order.CartID, err)
+		return "", false, fmt.Errorf("не удалось получить товары для CartID %d: %w", order.CartID, err)
 	}
 
 	if len(cartItems) == 0 {
-		return "", fmt.Errorf("корзина с ID %d пуста или не найдена", order.CartID)
+		return "", false, fmt.Errorf("корзина с ID %d пуста или не найдена", order.CartID)
 	}
 
 	var itemIDs []string
@@ -133,7 +163,7 @@ func (s *CdekService) CreateCdekOrder(cartIDStr string) (string, error) {
 
 		item, err := s.repoItem.GetItemByID(cartItem.ItemID)
 		if err != nil {
-			return "", fmt.Errorf("не удалось получить информацию о товаре ID %d: %w", cartItem.ItemID, err)
+			return "", false, fmt.Errorf("не удалось получить информацию о товаре ID %d: %w", cartItem.ItemID, err)
 		}
 		itemNames = append(itemNames, item.Name)
 	}
@@ -142,7 +172,7 @@ func (s *CdekService) CreateCdekOrder(cartIDStr string) (string, error) {
 
 	token, err := s.GetToken()
 	if err != nil {
-		return "", fmt.Errorf("failed to get CDEK token: %w", err)
+		return "", false, fmt.Errorf("failed to get CDEK token: %w", err)
 	}
 
 	shipmentPoint := os.Getenv("SHIPMENT_POINT")
@@ -190,7 +220,7 @@ func (s *CdekService) CreateCdekOrder(cartIDStr string) (string, error) {
 		Post("https://api.cdek.ru/v2/orders")
 
 	if err != nil {
-		return "", err
+		return "", false, err
 	}
 
 	if resp.StatusCode() != http.StatusOK && resp.StatusCode() != http.StatusAccepted {
@@ -217,7 +247,7 @@ func (s *CdekService) CreateCdekOrder(cartIDStr string) (string, error) {
 		} else {
 			errorMsg = fmt.Sprintf("%s. Response Body: %s", errorMsg, resp.String())
 		}
-		return "", errors.New(errorMsg)
+		return "", false, errors.New(errorMsg)
 	}
 
 	var cdekResp struct {
@@ -235,7 +265,7 @@ func (s *CdekService) CreateCdekOrder(cartIDStr string) (string, error) {
 		} `json:"requests"`
 	}
 	if err := json.Unmarshal(resp.Body(), &cdekResp); err != nil {
-		return "", fmt.Errorf("failed to unmarshal CDEK response: %w. Body: %s", err, resp.String())
+		return "", false, fmt.Errorf("failed to unmarshal CDEK response: %w. Body: %s", err, resp.String())
 	}
 
 	if len(cdekResp.Requests) > 0 && len(cdekResp.Requests[0].Errors) > 0 {
@@ -245,11 +275,11 @@ func (s *CdekService) CreateCdekOrder(cartIDStr string) (string, error) {
 				errorDetails = append(errorDetails, fmt.Sprintf("[%s] %s", e.Code, e.Message))
 			}
 		}
-		return "", fmt.Errorf("CDEK returned success status but with errors: %s", strings.Join(errorDetails, "; "))
+		return "", false, fmt.Errorf("CDEK returned success status but with errors: %s", strings.Join(errorDetails, "; "))
 	}
 
 	if cdekResp.Entity.UUID == "" {
-		return "", fmt.Errorf("CDEK response successful, but UUID is empty. Body: %s", resp.String())
+		return "", false, fmt.Errorf("CDEK response successful, but UUID is empty. Body: %s", resp.String())
 	}
 
 	var orderNumber string
@@ -265,7 +295,7 @@ func (s *CdekService) CreateCdekOrder(cartIDStr string) (string, error) {
 	}
 
 	if err != nil {
-		return "", fmt.Errorf("failed to get order number after %d attempts: %w", maxRetries, err)
+		return "", false, fmt.Errorf("failed to get order number after %d attempts: %w", maxRetries, err)
 	}
 
 	order.CdekOrderUUID = orderNumber
@@ -273,10 +303,10 @@ func (s *CdekService) CreateCdekOrder(cartIDStr string) (string, error) {
 
 	err = s.repoOrder.UpdateOrder(order)
 	if err != nil {
-		return "", err
+		return "", false, err
 	}
 
-	return orderNumber, nil
+	return orderNumber, true, nil
 }
 
 func (s *CdekService) GetPvzList(params map[string]string) ([]model.Pvz, error) {

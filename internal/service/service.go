@@ -83,7 +83,7 @@ type Cart interface {
 
 type Cdek interface {
 	GetToken() (string, error)
-	CreateCdekOrder(cartIDStr string) (string, error)
+	CreateCdekOrder(cartIDStr string) (orderNum string, created bool, err error)
 	GetPvzList(params map[string]string) ([]model.Pvz, error)
 }
 
