@@ -25,6 +25,10 @@ type Confirmation struct {
 type PaymentResponse struct {
 	ID           string `json:"id"`
 	Status       string `json:"status"`
+	Paid         bool   `json:"paid"`
+	Amount       Amount `json:"amount"`
+	Description  string `json:"description"`
+	CapturedAt   string `json:"captured_at"`
 	Confirmation struct {
 		ConfirmationURL string `json:"confirmation_url"`
 	} `json:"confirmation"`

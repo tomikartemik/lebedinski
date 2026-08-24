@@ -65,15 +65,20 @@ type Order interface {
 	ProcessOrder(order model.Order, paymentID string) error
 	GetAllOrders() ([]model.Order, error)
 	GetOrderByCartID(id int) (model.Order, error)
-	SendOrderConfirmation(cartIDStr, total string) error
+	GetOrderByPaymentID(paymentID string) (model.Order, error)
+	SendOrderConfirmation(paymentID, total string) error
 	SendOrderShippedNotification(cartIDStr string) error
 	DeleteOrder(cartID int) error
 	UpdateOrder(order model.Order) error
 	ChangeStatus(orderID int, status string) error
+	MarkPaymentSucceeded(paymentID string) (model.Order, error)
+	ClaimFulfillment(paymentID string) (bool, error)
+	SetFulfillmentFailed(paymentID, message string) error
 }
 
 type Payment interface {
 	CreatePayment(order model.Order) (*model.PaymentResponse, error)
+	GetPayment(paymentID string) (*model.PaymentResponse, error)
 }
 
 type Cart interface {
@@ -83,7 +88,7 @@ type Cart interface {
 
 type Cdek interface {
 	GetToken() (string, error)
-	CreateCdekOrder(cartIDStr string) (orderNum string, created bool, err error)
+	CreateCdekOrder(paymentID string) (orderNum string, err error)
 	GetPvzList(params map[string]string) ([]model.Pvz, error)
 }
 

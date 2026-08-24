@@ -9,9 +9,15 @@ import (
 	"lebedinski/internal/model"
 	"lebedinski/internal/repository"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 	"time"
+)
+
+var (
+	yooKassaAPIBaseURL = "https://api.yookassa.ru/v3"
+	yooKassaHTTPClient = &http.Client{Timeout: 8 * time.Second}
 )
 
 type PaymentService struct {
@@ -93,7 +99,7 @@ func (s *PaymentService) CreatePayment(order model.Order) (*model.PaymentRespons
 
 	req, err := http.NewRequest(
 		"POST",
-		"https://api.yookassa.ru/v3/payments",
+		yooKassaAPIBaseURL+"/payments",
 		bytes.NewBuffer(requestBody),
 	)
 	if err != nil {
@@ -104,8 +110,7 @@ func (s *PaymentService) CreatePayment(order model.Order) (*model.PaymentRespons
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Idempotence-Key", idempotenceKey)
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := yooKassaHTTPClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("API request failed: %w", err)
 	}
@@ -122,6 +127,37 @@ func (s *PaymentService) CreatePayment(order model.Order) (*model.PaymentRespons
 	}
 
 	return &paymentResponse, nil
+}
+
+// GetPayment fetches the authoritative payment state from YooKassa. Webhook
+// bodies are not trusted on their own because the endpoint is public.
+func (s *PaymentService) GetPayment(paymentID string) (*model.PaymentResponse, error) {
+	if paymentID == "" {
+		return nil, fmt.Errorf("payment id is required")
+	}
+
+	req, err := http.NewRequest("GET", yooKassaAPIBaseURL+"/payments/"+url.PathEscape(paymentID), nil)
+	if err != nil {
+		return nil, fmt.Errorf("request creation failed: %w", err)
+	}
+	req.SetBasicAuth(os.Getenv("SHOP_ID"), os.Getenv("SECRET_KEY"))
+
+	resp, err := yooKassaHTTPClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("payment verification failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		io.Copy(io.Discard, io.LimitReader(resp.Body, 4<<10))
+		return nil, fmt.Errorf("payment verification returned HTTP %d", resp.StatusCode)
+	}
+
+	var payment model.PaymentResponse
+	if err := json.NewDecoder(io.LimitReader(resp.Body, 1<<20)).Decode(&payment); err != nil {
+		return nil, fmt.Errorf("payment verification response is invalid: %w", err)
+	}
+	return &payment, nil
 }
 
 func formatAmount(amount float64) string {

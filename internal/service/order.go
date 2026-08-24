@@ -33,6 +33,8 @@ func NewOrderService(repoItem repository.Item, repoOrder repository.Order, repoS
 func (s *OrderService) ProcessOrder(order model.Order, paymentID string) error {
 	order.PaymentID = paymentID
 	order.Status = "Not Paid"
+	order.PaymentStatus = "Pending"
+	order.FulfillmentStatus = "Pending"
 	order.DateTime = time.Now()
 
 	cartItems, err := s.repoOrder.GetCartItemsByCartID(order.CartID)
@@ -76,18 +78,17 @@ func (s *OrderService) GetOrderByCartID(id int) (model.Order, error) {
 	return order, nil
 }
 
-func (s *OrderService) SendOrderConfirmation(cartIDStr, total string) error {
-	cartID, err := strconv.Atoi(cartIDStr)
+func (s *OrderService) GetOrderByPaymentID(paymentID string) (model.Order, error) {
+	return s.repoOrder.GetOrderByPaymentID(paymentID)
+}
+
+func (s *OrderService) SendOrderConfirmation(paymentID, total string) error {
+	order, err := s.repoOrder.GetOrderByPaymentID(paymentID)
 	if err != nil {
 		return err
 	}
 
-	order, err := s.repoOrder.GetOrderByCartID(cartID)
-	if err != nil {
-		return err
-	}
-
-	cart, err := s.repoCart.GetCartByID(cartID)
+	cart, err := s.repoCart.GetCartByID(order.CartID)
 	if err != nil {
 		return err
 	}
@@ -393,4 +394,16 @@ func (s *OrderService) UpdateOrder(order model.Order) error {
 
 func (s *OrderService) ChangeStatus(orderID int, status string) error {
 	return s.repoOrder.ChangeStatus(orderID, status)
+}
+
+func (s *OrderService) MarkPaymentSucceeded(paymentID string) (model.Order, error) {
+	return s.repoOrder.MarkPaymentSucceeded(paymentID)
+}
+
+func (s *OrderService) ClaimFulfillment(paymentID string) (bool, error) {
+	return s.repoOrder.ClaimFulfillment(paymentID)
+}
+
+func (s *OrderService) SetFulfillmentFailed(paymentID, message string) error {
+	return s.repoOrder.SetFulfillmentFailed(paymentID, message)
 }

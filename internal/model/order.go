@@ -3,21 +3,24 @@ package model
 import "time"
 
 type Order struct {
-	CartID         int       `gorm:"not null" json:"cart_id"`
-	FullName       string    `gorm:"not null" json:"full_name"`
-	Email          string    `gorm:"not null" json:"email"`
-	Phone          string    `gorm:"not null" json:"phone"`
-	AdditionalInfo string    `json:"additional_info"`
-	PointCode      string    `gorm:"not null" json:"point_code"`
-	DeliveryCity   string    `json:"delivery_city"`
-	Promocode      string    `json:"promocode"`
-	Status         string    `gorm:"default:'created';not null"`
-	Archive        bool      `gorm:"default:false" json:"archive"`
-	Marked         bool      `gorm:"default:false" json:"marked"`
-	PaymentID      string    `gorm:"primaryKey;uniqueIndex" json:"payment_id"`
-	TelegramID     string    `json:"telegram_id"`
-	DateTime       time.Time `json:"date_time"`
-	CdekOrderUUID  string    `json:"cdek_order_uuid"`
+	CartID            int       `gorm:"not null" json:"cart_id"`
+	FullName          string    `gorm:"not null" json:"full_name"`
+	Email             string    `gorm:"not null" json:"email"`
+	Phone             string    `gorm:"not null" json:"phone"`
+	AdditionalInfo    string    `json:"additional_info"`
+	PointCode         string    `gorm:"not null" json:"point_code"`
+	DeliveryCity      string    `json:"delivery_city"`
+	Promocode         string    `json:"promocode"`
+	Status            string    `gorm:"default:'created';not null"`
+	PaymentStatus     string    `gorm:"default:'Pending';not null" json:"payment_status"`
+	FulfillmentStatus string    `gorm:"default:'Pending';not null" json:"fulfillment_status"`
+	FulfillmentError  string    `json:"fulfillment_error"`
+	Archive           bool      `gorm:"default:false" json:"archive"`
+	Marked            bool      `gorm:"default:false" json:"marked"`
+	PaymentID         string    `gorm:"primaryKey;uniqueIndex" json:"payment_id"`
+	TelegramID        string    `json:"telegram_id"`
+	DateTime          time.Time `json:"date_time"`
+	CdekOrderUUID     string    `json:"cdek_order_uuid"`
 }
 
 type CdekOrderRequest struct {

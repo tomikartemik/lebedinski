@@ -3,6 +3,7 @@ package repository
 import (
 	"gorm.io/gorm"
 	"lebedinski/internal/model"
+	"strings"
 )
 
 type OrderRepository struct {
@@ -37,6 +38,14 @@ func (r *OrderRepository) GetAllOrders() ([]model.Order, error) {
 func (r *OrderRepository) GetOrderByCartID(id int) (model.Order, error) {
 	var order model.Order
 	if err := r.db.Where("cart_id = ?", id).First(&order).Error; err != nil {
+		return order, err
+	}
+	return order, nil
+}
+
+func (r *OrderRepository) GetOrderByPaymentID(paymentID string) (model.Order, error) {
+	var order model.Order
+	if err := r.db.Where("payment_id = ?", paymentID).First(&order).Error; err != nil {
 		return order, err
 	}
 	return order, nil
@@ -87,4 +96,53 @@ func (r *OrderRepository) ClaimOrderForProcessing(cartID int) (bool, error) {
 		return false, res.Error
 	}
 	return res.RowsAffected > 0, nil
+}
+
+// MarkPaymentSucceeded records YooKassa's result on the exact payment row.
+// Delivery failures must never move this status back to Not Paid.
+func (r *OrderRepository) MarkPaymentSucceeded(paymentID string) (model.Order, error) {
+	order, err := r.GetOrderByPaymentID(paymentID)
+	if err != nil {
+		return order, err
+	}
+
+	updates := map[string]interface{}{"payment_status": "Succeeded"}
+	switch strings.ToLower(strings.TrimSpace(order.Status)) {
+	case "", "created", "pending", "processing", "not paid":
+		updates["status"] = "Paid"
+	}
+	if err := r.db.Model(&model.Order{}).Where("payment_id = ?", paymentID).Updates(updates).Error; err != nil {
+		return order, err
+	}
+	return r.GetOrderByPaymentID(paymentID)
+}
+
+// ClaimFulfillment ensures duplicate YooKassa notifications cannot create
+// duplicate shipments or repeat stock/email side effects.
+func (r *OrderRepository) ClaimFulfillment(paymentID string) (bool, error) {
+	res := r.db.Model(&model.Order{}).
+		Where("payment_id = ? AND COALESCE(cdek_order_uuid, '') = '' AND fulfillment_status = ?", paymentID, "Pending").
+		Updates(map[string]interface{}{
+			"fulfillment_status": "Processing",
+			"fulfillment_error":  "",
+		})
+	if res.Error != nil {
+		return false, res.Error
+	}
+	return res.RowsAffected > 0, nil
+}
+
+func (r *OrderRepository) CompleteFulfillment(paymentID, cdekOrderNumber string) error {
+	return r.db.Model(&model.Order{}).Where("payment_id = ?", paymentID).Updates(map[string]interface{}{
+		"cdek_order_uuid":    cdekOrderNumber,
+		"fulfillment_status": "Ready",
+		"fulfillment_error":  "",
+	}).Error
+}
+
+func (r *OrderRepository) SetFulfillmentFailed(paymentID, message string) error {
+	return r.db.Model(&model.Order{}).Where("payment_id = ?", paymentID).Updates(map[string]interface{}{
+		"fulfillment_status": "Needs Attention",
+		"fulfillment_error":  message,
+	}).Error
 }

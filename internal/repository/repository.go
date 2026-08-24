@@ -68,11 +68,16 @@ type Order interface {
 	GetCartItemsByCartID(cartID int) ([]model.CartItem, error)
 	GetAllOrders() ([]model.Order, error)
 	GetOrderByCartID(id int) (model.Order, error)
+	GetOrderByPaymentID(paymentID string) (model.Order, error)
 	UpdateOrder(order model.Order) error
 	DeleteOrder(cartID int) error
 	ChangeStatus(orderID int, status string) error
 	ClaimOrderForProcessing(cartID int) (bool, error)
 	SetStatusByCartID(cartID int, status string) error
+	MarkPaymentSucceeded(paymentID string) (model.Order, error)
+	ClaimFulfillment(paymentID string) (bool, error)
+	CompleteFulfillment(paymentID, cdekOrderNumber string) error
+	SetFulfillmentFailed(paymentID, message string) error
 }
 
 type PromoCode interface {
