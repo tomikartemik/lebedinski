@@ -2,7 +2,9 @@ package internal
 
 import (
 	"context"
+	"net"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -11,8 +13,12 @@ type Server struct {
 }
 
 func (s *Server) Run(port string, handler http.Handler) error {
+	bindAddress := os.Getenv("BIND_ADDRESS")
+	if bindAddress == "" {
+		bindAddress = "127.0.0.1"
+	}
 	s.httpServer = &http.Server{
-		Addr:           ":" + port,
+		Addr:           net.JoinHostPort(bindAddress, port),
 		Handler:        handler,
 		MaxHeaderBytes: 1 << 20,
 		ReadTimeout:    10 * time.Second,

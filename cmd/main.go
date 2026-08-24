@@ -25,7 +25,10 @@ func main() {
 
 	repos := repository.NewRepository(db)
 	services := service.NewService(repos)
-	handlers := handler.NewHandler(services)
+	handlers, err := handler.NewHandler(services)
+	if err != nil {
+		log.Fatalf("Failed to configure HTTP handlers: %v", err)
+	}
 
 	srv := new(internal.Server)
 	if err := srv.Run(os.Getenv("PORT"), handlers.InitRoutes()); err != nil {

@@ -37,7 +37,7 @@ func (s *CdekService) GetToken() (string, error) {
 		return "", fmt.Errorf("ACCOUNT_TOKEN or SECURE_TOKEN environment variables are not set")
 	}
 
-	log.Printf("Получение токена СДЭК с учетными данными: account=%s, secure=%s", account, secure)
+	log.Print("Получение токена СДЭК")
 
 	client := resty.New()
 	resp, err := client.R().
@@ -53,10 +53,10 @@ func (s *CdekService) GetToken() (string, error) {
 		return "", fmt.Errorf("failed to request CDEK token: %w", err)
 	}
 
-	log.Printf("Ответ от API СДЭК /v2/oauth/token (статус %d): %s", resp.StatusCode(), resp.String())
+	log.Printf("Ответ от API СДЭК /v2/oauth/token: статус %d", resp.StatusCode())
 
 	if resp.StatusCode() != http.StatusOK {
-		return "", fmt.Errorf("CDEK token API error: Status %s, Body: %s", resp.Status(), resp.String())
+		return "", fmt.Errorf("CDEK token API error: status %s", resp.Status())
 	}
 
 	var tokenResp struct {
@@ -65,11 +65,11 @@ func (s *CdekService) GetToken() (string, error) {
 		ExpiresIn   int    `json:"expires_in"`
 	}
 	if err := json.Unmarshal(resp.Body(), &tokenResp); err != nil {
-		return "", fmt.Errorf("failed to unmarshal token response: %w. Body: %s", err, resp.String())
+		return "", fmt.Errorf("failed to unmarshal token response: %w", err)
 	}
 
 	if tokenResp.AccessToken == "" {
-		return "", fmt.Errorf("empty access token in response: %s", resp.String())
+		return "", fmt.Errorf("empty access token in response")
 	}
 
 	log.Printf("Успешно получен токен СДЭК: тип=%s, срок действия=%d сек", tokenResp.TokenType, tokenResp.ExpiresIn)
