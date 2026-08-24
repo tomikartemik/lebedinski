@@ -1,5 +1,25 @@
 # Change log
 
+## 2026-08-24 — Payment truth and fulfillment warnings
+
+Application revision: `773cca22e2acd83099c68391ff5ceb8f128fb195`
+
+### Fixed
+
+- Persist successful YooKassa payments before attempting CDEK fulfillment, so a delivery error cannot turn a captured payment back into `Not Paid`.
+- Verify every successful-payment notification against the YooKassa API instead of trusting the public webhook body.
+- Match and update the exact payment row rather than all records that share a cart ID.
+- Return promptly from the webhook and process CDEK separately, avoiding upstream timeouts during CDEK polling.
+- Store a separate fulfillment status and a support-safe explanation when CDEK rejects a pickup point.
+- Prevent duplicate webhook deliveries from creating duplicate shipments or repeating downstream side effects.
+
+### Validation
+
+- `go test ./...` passed locally and on the production server.
+- `go vet ./...` passed locally and on the production server.
+- Tests cover CDEK failure after payment, unconfirmed provider payments, and duplicate notifications.
+- The production release and data reconciliation are recorded in `docs/PAYMENT_STATUS_RELEASE_2026-08-24.md`.
+
 ## 2026-08-24 — API authorization and secret handling
 
 Commit: `8b5db5bc3caad55fd2054770e1b17638d1d30ab6`
@@ -33,4 +53,3 @@ Commit: `8b5db5bc3caad55fd2054770e1b17638d1d30ab6`
 - Payment webhook behavior was excluded from this release by request.
 
 See `docs/PRODUCTION_CHANGES_2026-08-24.md` for the accompanying server changes.
-
